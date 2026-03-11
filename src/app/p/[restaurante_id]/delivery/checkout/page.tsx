@@ -1,0 +1,252 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { BillSummary } from "@/components/client/BillSummary";
+import { Store, Loader2, ArrowLeft, ShoppingBag, Truck, MapPin, CreditCard, Banknote } from "lucide-react";
+import { useCart } from "@/lib/CartContext";
+import { useOrders } from "@/lib/OrderContext";
+import { formatCurrency, cn } from "@/lib/utils";
+
+export default function DeliveryCheckoutPage() {
+    const params = useParams();
+    const router = useRouter();
+    const { cartItems, cartTotal, clearCart } = useCart();
+    const { placeOrder } = useOrders();
+
+    const [restaurant, setRestaurant] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Form states
+    const [orderMethod, setOrderMethod] = useState<"delivery" | "pickup">("delivery");
+    const [customerName, setCustomerName] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
+    const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | "cash">("card");
+
+    const deliveryFee = 12.50; // Fixed delivery fee for demo
+
+    useEffect(() => {
+        const restaurantId = params.restaurante_id as string || "rest_123";
+
+        const loadData = async () => {
+            try {
+                const { data, error } = await supabase.from('restaurants').select('*').eq('id', restaurantId).single();
+                if (error) throw error;
+                if (data) setRestaurant(data);
+            } catch (error) {
+                console.error("Failed to load checkout data", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadData();
+    }, [params]);
+
+    // Handle form toggle constraints
+    useEffect(() => {
+        if (orderMethod === "delivery" && paymentMethod === "cash") {
+            setPaymentMethod("card"); // Usually you restrict cash on delivery
+        }
+    }, [orderMethod, paymentMethod]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!restaurant) {
+        return <div className="p-6 text-center text-slate-500">Restaurante não encontrado.</div>;
+    }
+
+    const currentDeliveryFee = orderMethod === "delivery" ? deliveryFee : 0;
+    const totalAmount = cartTotal + currentDeliveryFee; // Not asking for tip on delivery
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!customerName || !customerPhone || (orderMethod === "delivery" && !deliveryAddress)) {
+            alert("Por favor, preencha todos os campos obrigatórios.");
+            return;
+        }
+
+        const txId = `tx_${Date.now()}`;
+        const finalStatus = paymentMethod === "cash" ? "pending" : "paid";
+
+        placeOrder(
+            restaurant.id,
+            0, // No table for delivery/pickup
+            cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
+            cartTotal,
+            0, // No tip
+            paymentMethod,
+            finalStatus,
+            orderMethod,
+            customerName,
+            customerPhone,
+            deliveryAddress,
+            currentDeliveryFee
+        );
+        clearCart();
+        router.push(`/p/${restaurant.id}/success?tx=${txId}`);
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900 overflow-x-hidden">
+            <header className="bg-white px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-10 w-full">
+                <div className="max-w-md mx-auto flex items-center gap-3">
+                    <button onClick={() => router.back()} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <div>
+                        <h1 className="font-bold text-slate-900 leading-tight">Finalizar Pedido</h1>
+                        <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                            <Store className="w-3 h-3" /> {restaurant.name}
+                        </p>
+                    </div>
+                </div>
+            </header>
+
+            <main className="px-6 py-6 max-w-md mx-auto">
+
+                {cartItems.length === 0 ? (
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center text-slate-500 mt-6">
+                        <p>Seu carrinho está vazio.</p>
+                        <button onClick={() => router.back()} className="mt-4 text-primary-600 font-semibold hover:underline">Voltar ao Menu</button>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+
+                        {/* Method Selector */}
+                        <div className="mb-8">
+                            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <Truck className="w-5 h-5 text-indigo-500" /> Como você quer receber?
+                            </h2>
+                            <div className="flex gap-4">
+                                <label className={cn(
+                                    "flex-1 border-2 rounded-xl p-4 text-center cursor-pointer transition-all",
+                                    orderMethod === "delivery" ? "border-indigo-500 relative ring-4 ring-indigo-500/10 shadow-sm" : "border-slate-200 text-slate-500 bg-white hover:border-slate-300"
+                                )}>
+                                    <input type="radio" name="method" value="delivery" checked={orderMethod === "delivery"} onChange={() => setOrderMethod("delivery")} className="sr-only" />
+                                    <Truck className={cn("w-6 h-6 mx-auto mb-2", orderMethod === "delivery" ? "text-indigo-500" : "text-slate-400")} />
+                                    <span className="font-bold">Delivery</span>
+                                </label>
+                                <label className={cn(
+                                    "flex-1 border-2 rounded-xl p-4 text-center cursor-pointer transition-all",
+                                    orderMethod === "pickup" ? "border-purple-500 relative ring-4 ring-purple-500/10 shadow-sm" : "border-slate-200 text-slate-500 bg-white hover:border-slate-300"
+                                )}>
+                                    <input type="radio" name="method" value="pickup" checked={orderMethod === "pickup"} onChange={() => setOrderMethod("pickup")} className="sr-only" />
+                                    <Store className={cn("w-6 h-6 mx-auto mb-2", orderMethod === "pickup" ? "text-purple-500" : "text-slate-400")} />
+                                    <span className="font-bold">Retirada</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Customer Info Form */}
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-8 space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Seu Nome</label>
+                                <input required type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Como devemos te chamar" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">WhatsApp</label>
+                                <input required type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="(00) 00000-0000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                            </div>
+
+                            {orderMethod === "delivery" && (
+                                <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase mt-2">Endereço de Entrega Completo</label>
+                                    <textarea required rows={2} value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Rua, Número, Bairro, Complemento" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Order Summary */}
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-8">
+                            <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <ShoppingBag className="w-4 h-4 text-slate-500" /> Detalhes do Pedido
+                            </h3>
+
+                            <div className="space-y-2 mb-4">
+                                {cartItems.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between text-sm">
+                                        <span className="text-slate-600"><span className="text-slate-400 mr-1">{item.quantity}x</span> {item.name}</span>
+                                        <span className="text-slate-800 font-medium">{formatCurrency((item.price * (item.quantity || 1)))}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="border-t border-slate-200 pt-3 space-y-2 text-sm">
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Subtotal</span>
+                                    <span>{formatCurrency(cartTotal)}</span>
+                                </div>
+
+                                {orderMethod === "delivery" && (
+                                    <div className="flex justify-between text-indigo-600 font-medium animate-in fade-in">
+                                        <span>Taxa de Entrega</span>
+                                        <span>{formatCurrency(deliveryFee)}</span>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between font-bold text-slate-900 text-lg pt-2">
+                                    <span>Total</span>
+                                    <span>{formatCurrency(totalAmount)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payment Selector */}
+                        <div className="mb-8">
+                            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <CreditCard className="w-5 h-5 text-indigo-500" /> Pagamento
+                            </h2>
+                            <div className="space-y-3">
+                                <label className={cn(
+                                    "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all",
+                                    paymentMethod === "card" ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
+                                )}>
+                                    <input type="radio" value="card" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} className="sr-only" />
+                                    <CreditCard className={cn("w-6 h-6", paymentMethod === "card" ? "text-indigo-600" : "text-slate-400")} />
+                                    <div className="flex-1">
+                                        <div className="font-bold text-slate-900">Cartão de Crédito Online</div>
+                                        <div className="text-xs text-slate-500">Aprovação imediata</div>
+                                    </div>
+                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "card" ? "border-indigo-500" : "border-slate-300")}>
+                                        {paymentMethod === "card" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
+                                    </div>
+                                </label>
+
+                                <label className={cn(
+                                    "flex items-center gap-4 border-2 rounded-xl p-4 transition-all relative overflow-hidden",
+                                    orderMethod === "delivery" ? "opacity-50 cursor-not-allowed bg-slate-50 border-slate-200" : "bg-white border-slate-200 cursor-pointer",
+                                    paymentMethod === "cash" && orderMethod === "pickup" ? "border-indigo-500 bg-indigo-50" : ""
+                                )}>
+                                    <input type="radio" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} disabled={orderMethod === "delivery"} className="sr-only" />
+                                    <Banknote className={cn("w-6 h-6", paymentMethod === "cash" && orderMethod === "pickup" ? "text-indigo-600" : "text-slate-400")} />
+                                    <div className="flex-1">
+                                        <div className="font-bold text-slate-900">Na retirada da loja</div>
+                                        <div className="text-xs text-slate-500 line-clamp-1">{orderMethod === "delivery" ? "Indisponível para Delivery" : "Pague em dinheiro ou cartão ao retirar"}</div>
+                                    </div>
+                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center relative", paymentMethod === "cash" && orderMethod === "pickup" ? "border-indigo-500" : "border-slate-300")}>
+                                        {paymentMethod === "cash" && orderMethod === "pickup" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl flex items-center justify-center shadow-lg active:scale-[0.98] transition-all">
+                            Finalizar Pedido • {formatCurrency(totalAmount)}
+                        </button>
+                    </form>
+                )}
+            </main>
+        </div>
+    );
+}
