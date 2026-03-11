@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect } from "react";
@@ -16,8 +16,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     useEffect(() => {
         if (!isAuthenticated && pathname !== "/admin/login") {
             router.push("/admin/login");
+        } else if (isAuthenticated && user) {
+            // Strict Role-Based Redirection locks 
+            if (user.role === "kitchen" && pathname !== "/admin/kitchen") {
+                router.push("/admin/kitchen");
+            } else if (user.role === "waiter" && pathname !== "/admin/waiter") {
+                router.push("/admin/waiter");
+            }
         }
-    }, [isAuthenticated, pathname, router]);
+    }, [isAuthenticated, pathname, router, user]);
 
     if (!isAuthenticated && pathname !== "/admin/login") return null;
 
@@ -41,6 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { name: "Caixa / Mesas", href: "/admin/cashier", icon: Receipt },
             { name: "Cozinha", href: "/admin/kitchen", icon: ChefHat },
             { name: "Painel Garçom", href: "/admin/waiter", icon: Users },
+            { name: "Equipe", href: "/admin/staff", icon: UserCog },
             { name: "Analytics", href: "/admin/analytics", icon: PieChart },
             { name: "Cardápio", href: "/admin/menu", icon: Store },
             { name: "Clientes", href: "/admin/customers", icon: Users },
