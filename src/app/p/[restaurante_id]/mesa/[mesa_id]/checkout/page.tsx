@@ -18,6 +18,7 @@ export default function CheckoutPage() {
 
     const [restaurant, setRestaurant] = useState<any>(null);
     const [tipPercentage, setTipPercentage] = useState(0);
+    const [customerNif, setCustomerNif] = useState("");
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -57,18 +58,24 @@ export default function CheckoutPage() {
     const tipAmount = cartTotal * (tipPercentage / 100);
     const totalAmount = cartTotal + tipAmount;
 
-    const handlePaymentSuccess = (transactionId: string, method: string, status: string) => {
-        placeOrder(
+    const handlePaymentSuccess = async (transactionId: string, method: string, status: string) => {
+        const tableNumber = Number(params.mesa_id) || 1;
+        const result = await placeOrder(
             restaurant.id,
-            Number(params.mesa_id || 1),
+            tableNumber,
             cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
             cartTotal,
             tipAmount,
             method as any,
-            status as any
+            status as any,
+            "in_store",
+            undefined, // customerName
+            undefined, // customerPhone
+            customerNif || undefined
         );
         clearCart();
-        router.push(`/p/${restaurant.id}/success?tx=${transactionId}`);
+        const txId = result?.orderNumber || transactionId;
+        router.push(`/p/${restaurant.id}/success?tx=${txId}&table=${params.mesa_id || 1}`);
     };
 
     return (
@@ -110,8 +117,22 @@ export default function CheckoutPage() {
                             />
                         </div>
 
-                        {/* Decorative divider before payment */}
                         <div className="border-t border-dashed border-slate-300 my-8"></div>
+
+                        <div className="mb-8">
+                            <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                                <span>Contribuinte / NIF (Opcional)</span>
+                                <span className="text-[10px] font-medium bg-slate-200 px-2 py-0.5 rounded text-slate-500 uppercase tracking-widest">Fatura</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                maxLength={9} 
+                                value={customerNif} 
+                                onChange={e => setCustomerNif(e.target.value)} 
+                                placeholder="Insira o NIF" 
+                                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 font-mono tracking-widest transition-shadow" 
+                            />
+                        </div>
 
                         <h2 className="text-xl font-bold text-slate-900 mb-6">Pagamento</h2>
 

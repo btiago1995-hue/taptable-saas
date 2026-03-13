@@ -31,6 +31,7 @@ export default function WaiterDashboard() {
             case "new": return { label: "Cozinha vai aceitar", color: "bg-red-50 text-red-600 border border-red-200" };
             case "preparing": return { label: "Na Cozinha", color: "bg-amber-100 text-amber-800" };
             case "ready": return { label: "Pronto p/ Levar", color: "bg-blue-100 text-blue-800 font-bold border-2 border-blue-400 animate-pulse" };
+            case "delivering": return { label: "A Caminho", color: "bg-teal-100 text-teal-800 font-bold" };
             case "delivered": return { label: "Entregue", color: "bg-emerald-100 text-emerald-800" };
         }
     };
@@ -47,10 +48,10 @@ export default function WaiterDashboard() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-1">Olá, {user?.name?.split(" ")[0] || "Garçom"} 👋</h1>
-                    <p className="text-slate-500 font-medium tracking-wide flex items-center gap-2">Supervisione as mesas e entregue pratos prontos.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">Olá, {user?.name?.split(" ")[0] || "Garçom"} 👋</h1>
+                    <p className="hidden md:flex text-slate-500 font-medium tracking-wide items-center gap-2">Supervisione as mesas e entregue pratos prontos.</p>
                 </div>
 
                 <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
@@ -61,7 +62,7 @@ export default function WaiterDashboard() {
                         <button
                             key={f.id}
                             onClick={() => setFilter(f.id as any)}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${filter === f.id ? "bg-primary-600 text-white" : "text-slate-600 hover:bg-slate-50"
+                            className={`flex-1 md:flex-none px-4 py-3 md:py-2 rounded-lg text-sm md:text-sm font-bold md:font-semibold transition-colors ${filter === f.id ? "bg-primary-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                                 }`}
                         >
                             {f.label}
@@ -90,11 +91,16 @@ export default function WaiterDashboard() {
                                 <div className="p-5 flex-1">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xl shadow-sm transform -rotate-2">
-                                                {order.tableNumber}
+                                            <div className={cn(
+                                                "h-12 rounded-xl text-white flex items-center justify-center font-bold text-xl shadow-sm transform -rotate-2 px-3",
+                                                order.tableNumber > 0 ? "bg-slate-900 min-w-[3rem]" : "bg-purple-600 min-w-[4rem]"
+                                            )}>
+                                                {order.tableNumber > 0 ? order.tableNumber : (order.orderNumber || `#${order.id.split('_')[2] || "00"}`)}
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mesa</p>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                                    {order.tableNumber > 0 ? "Mesa" : "Pedido"}
+                                                </p>
                                                 <div className="flex items-center gap-2">
                                                     <Clock className="w-3 h-3 text-slate-400" />
                                                     <span className="text-sm font-semibold text-slate-700">{timeString}</span>
@@ -114,29 +120,29 @@ export default function WaiterDashboard() {
                                                     key={idx}
                                                     onClick={() => !isDelivered && markItemDelivered(order.id, item.id)}
                                                     className={cn(
-                                                        "flex justify-between items-center text-sm p-2 rounded-lg border transition-all",
+                                                        "flex justify-between items-center text-sm p-3 rounded-xl border transition-all mb-2 select-none",
                                                         isDelivered
                                                             ? "bg-slate-50 border-transparent opacity-60"
-                                                            : "bg-white border-slate-100 hover:border-blue-200 cursor-pointer hover:bg-blue-50/50 shadow-sm"
+                                                            : "bg-white border-slate-100 hover:border-blue-200 cursor-pointer hover:bg-blue-50/50 shadow-sm min-h-[64px]"
                                                     )}
                                                 >
                                                     <span className={cn(
-                                                        "font-medium flex items-center gap-2",
+                                                        "font-semibold flex items-center gap-3 text-base md:text-sm",
                                                         isDelivered ? "text-slate-500 line-through" : "text-slate-800"
                                                     )}>
-                                                        <span className={isDelivered ? "text-slate-400 font-normal" : "text-blue-600 font-bold"}>
+                                                        <span className={isDelivered ? "text-slate-400 font-normal" : "text-blue-600 font-extrabold text-lg"}>
                                                             {item.quantity}x
                                                         </span>
                                                         {item.name}
                                                     </span>
                                                     {!isDelivered ? (
                                                         <button
-                                                            className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors flex items-center gap-1"
+                                                            className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 active:scale-95"
                                                         >
-                                                            <Coffee className="w-3 h-3" /> Servir
+                                                            <Coffee className="w-4 h-4" /> Servir
                                                         </button>
                                                     ) : (
-                                                        <Check className="w-4 h-4 text-emerald-500" />
+                                                        <Check className="w-5 h-5 text-emerald-500" />
                                                     )}
                                                 </div>
                                             );

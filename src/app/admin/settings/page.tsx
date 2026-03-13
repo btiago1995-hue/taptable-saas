@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer } from "lucide-react";
 import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -15,17 +15,38 @@ export default function AdminSettings() {
 
     // Form States
     const [restaurantName, setRestaurantName] = useState("");
+    const [nifNumber, setNifNumber] = useState("");
+    const [address, setAddress] = useState("");
     const [tipPercentage, setTipPercentage] = useState("10%");
+    const [deliveryFee, setDeliveryFee] = useState("0");
+    const [vinti4PosId, setVinti4PosId] = useState("");
+    const [vinti4PosAutCode, setVinti4PosAutCode] = useState("");
     const [activeTables, setActiveTables] = useState("45");
     const [googleLink, setGoogleLink] = useState("https://g.page/r/taptable/review");
     const [qrCodes, setQrCodes] = useState<{ table: number, url: string, link: string }[]>([]);
+    const [deliveryQr, setDeliveryQr] = useState<{url: string, link: string} | null>(null);
 
     useEffect(() => {
         // Load real restaurant data
         const loadRest = async () => {
             if (user?.restaurantId) {
-                const { data } = await supabase.from('restaurants').select('name').eq('id', user.restaurantId).single();
-                if (data) setRestaurantName(data.name);
+                const { data } = await supabase
+                    .from('restaurants')
+                    .select('name, nif_number, address, active_tables, tip_percentage, google_review_link, delivery_fee, vinti4_pos_id, vinti4_pos_aut_code')
+                    .eq('id', user.restaurantId)
+                    .single();
+                    
+                if (data) {
+                    setRestaurantName(data.name || "");
+                    if (data.nif_number) setNifNumber(data.nif_number);
+                    if (data.address) setAddress(data.address);
+                    if (data.active_tables) setActiveTables(data.active_tables.toString());
+                    if (data.tip_percentage) setTipPercentage(data.tip_percentage);
+                    if (data.delivery_fee) setDeliveryFee(data.delivery_fee.toString());
+                    if (data.vinti4_pos_id) setVinti4PosId(data.vinti4_pos_id);
+                    if (data.vinti4_pos_aut_code) setVinti4PosAutCode(data.vinti4_pos_aut_code);
+                    if (data.google_review_link) setGoogleLink(data.google_review_link);
+                }
             }
         };
         loadRest();
@@ -51,6 +72,16 @@ export default function AdminSettings() {
                 }
             }
             setQrCodes(newQRs);
+
+            // Generate single delivery QR
+            try {
+                const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+                const deliveryUrl = `${origin}/p/${user.restaurantId}/delivery`;
+                const deliveryQrImg = await QRCode.toDataURL(deliveryUrl, { margin: 1, width: 200 });
+                setDeliveryQr({ url: deliveryQrImg, link: deliveryUrl });
+            } catch (err) {
+                console.error("Error generating Delivery QR", err);
+            }
         };
 
         generateQRs();
@@ -61,7 +92,18 @@ export default function AdminSettings() {
         setSaveSuccess(false);
         try {
             if (user?.restaurantId) {
-                await supabase.from('restaurants').update({ name: restaurantName }).eq('id', user.restaurantId);
+                await supabase.from('restaurants').update({ 
+                    name: restaurantName,
+                    nif_number: nifNumber,
+                    address: address,
+                    active_tables: parseInt(activeTables) || 45,
+                    tip_percentage: tipPercentage,
+                    delivery_fee: parseFloat(deliveryFee) || 0,
+                    vinti4_pos_id: vinti4PosId,
+                    vinti4_pos_aut_code: vinti4PosAutCode,
+                    google_review_link: googleLink
+                }).eq('id', user.restaurantId);
+                
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 3000); // Hide success message after 3 seconds
             }
@@ -75,7 +117,7 @@ export default function AdminSettings() {
     return (
         <div className="max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-8 flex items-center justify-between print:hidden">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 mb-2">Configurações</h1>
                     <p className="text-slate-500">Gerencie as preferências e integrações do seu restaurante.</p>
@@ -105,7 +147,7 @@ export default function AdminSettings() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
                 {/* Left Column - Navigation/Tabs */}
-                <div className="col-span-1 space-y-2">
+                <div className="col-span-1 space-y-2 print:hidden">
                     {tabs.map((tab, i) => (
                         <button
                             key={i}
@@ -141,7 +183,30 @@ export default function AdminSettings() {
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
                                     />
                                 </div>
-                                <p className="text-xs text-slate-500">Este nome aparecerá no topo do cardápio digital para seus clientes.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">NIF do Estabelecimento</label>
+                                        <input
+                                            type="text"
+                                            maxLength={9}
+                                            value={nifNumber}
+                                            onChange={(e) => setNifNumber(e.target.value)}
+                                            placeholder="Ex: 000 000 000"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium font-mono tracking-widest outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Morada Sede Fiscal</label>
+                                        <input
+                                            type="text"
+                                            value={address}
+                                            onChange={(e) => setAddress(e.target.value)}
+                                            placeholder="Ex: Rua Direita, Prainha, Praia"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-slate-500">Estas entidades e identificadores locais serão impressos obrigatoriamente no cabeçalho das Guias Oficiais e recibos para o cumprimento do código fiscal de Cabo Verde (E-Fatura).</p>
                             </div>
                         </div>
                     )}
@@ -153,7 +218,7 @@ export default function AdminSettings() {
                                 Opções de Gorjeta
                             </h3>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Gorjeta Padrão Sugerida</label>
                                     <select
@@ -167,83 +232,159 @@ export default function AdminSettings() {
                                         <option value="15%">15%</option>
                                         <option value="20%">20%</option>
                                     </select>
+                                    <p className="text-xs text-slate-500 mt-1">Esta será a opção pré-selecionada na tela de pagamento para mesas no salão.</p>
                                 </div>
-                                <p className="text-xs text-slate-500">Esta será a opção pré-selecionada na tela de pagamento do cliente.</p>
+
+                                <div className="border-t border-slate-100 pt-6">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Taxa Fixa de Entrega (CVE)</label>
+                                    <div className="relative">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 font-medium">
+                                            $
+                                        </span>
+                                        <input
+                                            type="number"
+                                            value={deliveryFee}
+                                            onChange={(e) => setDeliveryFee(e.target.value)}
+                                            placeholder="Ex: 150"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        Este valor será cobrado automaticamente e somado na conta de todos os clientes que pedirem via Delivery. Configure como "0" se a entrega for grátis.
+                                    </p>
+                                </div>
+
+                                <div className="border-t border-slate-100 pt-6">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-4 flex items-center gap-2">
+                                        Integração Vinti4 (Pagamento Online)
+                                    </h4>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">POS ID (Comerciante)</label>
+                                            <input
+                                                type="text"
+                                                value={vinti4PosId}
+                                                onChange={(e) => setVinti4PosId(e.target.value)}
+                                                placeholder="Ex: 9000000"
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Chave de Autorização</label>
+                                            <input
+                                                type="password"
+                                                value={vinti4PosAutCode}
+                                                onChange={(e) => setVinti4PosAutCode(e.target.value)}
+                                                placeholder="Sua chave secreta SISP"
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        Insira as credenciais fornecidas pela SISP (Vinti4Net). Ao preencher, os seus clientes poderão pagar a conta diretamente pelo celular usando o Cartão Vinti4.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {activeTab === "Links & QR Codes" && (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in">
-                            <h3 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in print:shadow-none print:border-none print:p-0">
+                            <h3 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2 print:hidden">
                                 <QrCode className="w-5 h-5 text-primary-600" />
                                 Links & QR Codes
                             </h3>
 
                             <div className="space-y-6">
                                 {/* Delivery Link Section */}
-                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-                                    <h4 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
-                                        <LinkIcon className="w-4 h-4" /> Link do Cardápio / Delivery
-                                    </h4>
-                                    <p className="text-xs text-indigo-700 mb-3">Compartilhe este link no seu Instagram ou WhatsApp para receber pedidos de Delivery e Retirada.</p>
-                                    <div className="flex items-center gap-2">
-                                        <input 
-                                            readOnly 
-                                            value={user?.restaurantId ? `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/p/${user.restaurantId}/delivery` : ''} 
-                                            className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none select-all font-mono"
-                                        />
-                                        <button 
-                                            onClick={() => {
-                                                if (user?.restaurantId) {
-                                                    navigator.clipboard.writeText(`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/p/${user.restaurantId}/delivery`);
-                                                    alert("Link copiado para a área de transferência!");
-                                                }
-                                            }}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-                                        >
-                                            Copiar
-                                        </button>
+                                <div className="p-4 md:p-6 bg-indigo-50 border border-indigo-100 rounded-xl print:hidden flex flex-col sm:flex-row gap-6 items-center">
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
+                                            <LinkIcon className="w-4 h-4" /> Link para Delivery & Redes Sociais
+                                        </h4>
+                                        <p className="text-xs text-indigo-700 mb-4 leading-relaxed">Compartilhe este link no seu perfil do Instagram ou via WhatsApp para receber pedidos externos (Delivery e Retirada) diretamente no painel do restaurante.</p>
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                readOnly 
+                                                value={deliveryQr?.link || ''} 
+                                                className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none select-all font-mono"
+                                            />
+                                            <button 
+                                                onClick={() => {
+                                                    if (user?.restaurantId) {
+                                                        navigator.clipboard.writeText(deliveryQr?.link || '');
+                                                        alert("Link copiado para a área de transferência!");
+                                                    }
+                                                }}
+                                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap"
+                                            >
+                                                Copiar
+                                            </button>
+                                        </div>
                                     </div>
+                                    {deliveryQr && (
+                                        <div className="shrink-0 flex flex-col items-center bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={deliveryQr.url} alt="Delivery QR Code" className="w-24 h-24 mb-2" />
+                                            <span className="text-xs font-bold text-indigo-600">Scan Delivery</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="border-t border-slate-100 pt-6">
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Total de Mesas Ativas</label>
+                                <div className="border-t border-slate-100 pt-6 print:hidden">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-4">Mapeamento de Mesas Físicas (Salão)</h4>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Total de Mesas Ativas</label>
                                     <input
                                         type="number"
                                         value={activeTables}
                                         onChange={(e) => setActiveTables(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all mb-4"
                                     />
-                                </div>
-                                <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3 text-orange-800 mt-4">
-                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                    <p className="text-sm">Se alterar a quantidade de mesas, os QR Codes abaixo serão atualizados instantaneamente.</p>
+                                    <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3 text-orange-800">
+                                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                        <p className="text-sm leading-relaxed">
+                                            Ao alterar o número de mesas, guarde as configurações primeiro. Os novos códigos QR abaixo substituirão os antigos perfeitamente. Coloque cada QR código na mesa exata correspondente para que os pedidos caiam no lugar certo.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div className="pt-4 border-t border-slate-100 mt-6">
-                                    <h4 className="font-bold text-sm text-slate-800 mb-3 flex justify-between items-center">
-                                        Pré-visualização
-                                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-md">{qrCodes.length} gerados</span>
-                                    </h4>
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-3 border border-slate-100 rounded-xl bg-slate-50/50">
-                                        {qrCodes.map((qr) => (
-                                            <a
-                                                key={qr.table}
-                                                href={qr.link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="bg-white p-2 rounded-lg shadow-sm flex flex-col items-center justify-center border border-slate-100 transition-all hover:-translate-y-1 hover:border-primary-300 hover:shadow-md cursor-pointer group"
-                                            >
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={qr.url} alt={`QR Mesa ${qr.table}`} className="w-16 h-16 object-contain group-hover:opacity-90 transition-opacity" />
-                                                <span className="text-xs font-bold text-slate-600 mt-2 group-hover:text-primary-600 transition-colors">Mesa {qr.table}</span>
-                                            </a>
-                                        ))}
-                                    </div>
-                                    <div className="pt-4 flex gap-3">
-                                        <button className="bg-primary-50 hover:bg-primary-100 text-primary-700 font-bold px-4 py-2.5 rounded-xl transition-colors text-sm w-full outline-none">
-                                            Baixar PDF com Lote Completo
+                                    <div className="flex justify-between items-center mb-4 print:hidden">
+                                        <h4 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                            Cartões de QR Code ({qrCodes.length} gerados)
+                                        </h4>
+                                        <button 
+                                            onClick={() => window.print()}
+                                            className="bg-primary-50 hover:bg-primary-100 text-primary-700 font-bold px-4 py-2 rounded-lg transition-colors text-xs flex items-center gap-1"
+                                        >
+                                            <Printer className="w-4 h-4" /> Imprimir Cartões
                                         </button>
+                                    </div>
+                                    
+                                    {/* Print Mode CSS handles this grid specifically */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto p-4 border border-slate-100 rounded-xl bg-slate-50/50 print:grid-cols-3 print:max-h-none print:bg-white print:border-none print:p-0 print:overflow-visible">
+                                        {qrCodes.map((qr) => (
+                                            <div
+                                                key={qr.table}
+                                                className="bg-white p-3 md:p-4 rounded-xl shadow-sm flex flex-col items-center justify-center border border-slate-100 transition-all hover:border-primary-300 hover:shadow-md print:border-2 print:border-slate-300 print:shadow-none print:m-2 print:break-inside-avoid"
+                                            >
+                                                <div className="bg-slate-900 text-white w-full text-center py-1 rounded-t-md text-[10px] font-black uppercase tracking-widest print:py-1">
+                                                    TapTable
+                                                </div>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={qr.url} alt={`QR Mesa ${qr.table}`} className="w-20 h-20 md:w-28 md:h-28 mt-2 object-contain" />
+                                                <span className="text-sm font-black text-slate-800 mt-2 mb-1">Mesa {qr.table}</span>
+                                                <span className="text-[9px] text-slate-400 font-semibold mb-2 print:hidden">Aponte a câmera</span>
+                                                <a 
+                                                    href={qr.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-full text-center py-1.5 mt-auto bg-slate-50 hover:bg-slate-100 text-slate-500 rounded text-[10px] font-bold transition-colors border border-slate-200 print:hidden"
+                                                >
+                                                    Copiar Link
+                                                </a>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -275,6 +416,24 @@ export default function AdminSettings() {
                 </div>
 
             </div>
+
+            {/* Print CSS Rules */}
+            <style jsx global>{`
+                @media print {
+                    @page { margin: 10mm; }
+                    body { background: white; margin: 0; padding: 0; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    .print\\:hidden { display: none !important; }
+                    .print\\:shadow-none { box-shadow: none !important; }
+                    .print\\:border-none { border: none !important; }
+                    .print\\:m-2 { margin: 0.5rem !important; }
+                    .print\\:p-0 { padding: 0 !important; }
+                    .print\\:break-inside-avoid { break-inside: avoid !important; }
+                    /* Make main content full width */
+                    main { overflow: visible !important; width: 100% !important; max-width: none !important; padding: 0 !important; }
+                    aside, nav { display: none !important; }
+                }
+            `}</style>
         </div>
     );
 }

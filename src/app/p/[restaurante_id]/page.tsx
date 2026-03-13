@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, Truck, Store, Clock, MapPin, ChevronRight, Star } from "lucide-react";
+import { Loader2, Truck, Store, Clock, MapPin, ChevronRight, Star, ShieldAlert } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Image from "next/image"; // In a real app we'd use Next Image, here we simulate
 
@@ -13,9 +13,15 @@ export default function RestaurantLandingPage() {
     const [restaurant, setRestaurant] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const restaurantId = params.restaurante_id as string || "rest_123";
+    const restaurantId = params.restaurante_id as string || "rest_123";
 
+    // Loyalty State
+    const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+    const [loyaltyPhone, setLoyaltyPhone] = useState("");
+    const [loyaltyResult, setLoyaltyResult] = useState<any>(null);
+    const [isCheckingLoyalty, setIsCheckingLoyalty] = useState(false);
+
+    useEffect(() => {
         const loadData = async () => {
             try {
                 const { data, error } = await supabase.from('restaurants').select('*').eq('id', restaurantId).single();
@@ -29,7 +35,29 @@ export default function RestaurantLandingPage() {
         };
 
         loadData();
-    }, [params]);
+    }, [restaurantId]);
+
+    const checkLoyalty = async () => {
+        if (!loyaltyPhone) return;
+        setIsCheckingLoyalty(true);
+        try {
+            const { data, error } = await supabase
+                .from('loyalty_customers')
+                .select('*')
+                .eq('restaurant_id', restaurantId)
+                .eq('phone_number', loyaltyPhone)
+                .single();
+                
+            if (data) {
+                setLoyaltyResult(data);
+            } else {
+                setLoyaltyResult({ stars: 0, new: true });
+            }
+        } catch (e) {
+            setLoyaltyResult({ stars: 0, new: true });
+        }
+        setIsCheckingLoyalty(false);
+    };
 
     if (isLoading) {
         return (
@@ -41,6 +69,21 @@ export default function RestaurantLandingPage() {
 
     if (!restaurant) {
         return <div className="p-6 text-center text-slate-500">Restaurante não encontrado.</div>;
+    }
+
+    if (restaurant.is_active === false) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
+                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-inner shadow-red-200">
+                    <ShieldAlert className="w-10 h-10 text-red-500" />
+                </div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Serviço Temporariamente Indisponível</h1>
+                <p className="text-lg text-slate-500 max-w-md mx-auto mb-8 font-medium">O acesso a este cardápio digital está suspenso no momento. Por favor, contate o estabelecimento diretamente.</p>
+                <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                    Powered by TapTable SaaS
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -84,6 +127,23 @@ export default function RestaurantLandingPage() {
                     </div>
                 </div>
 
+                {/* Loyalty Card */}
+                <button 
+                    onClick={() => setIsLoyaltyModalOpen(true)}
+                    className="w-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl shadow-lg shadow-amber-500/20 border border-amber-300 p-4 mb-8 flex items-center justify-between text-amber-950 hover:scale-[1.02] transition-transform active:scale-95"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <Star className="w-7 h-7 fill-amber-900/80 text-amber-900" />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="font-extrabold text-lg leading-tight uppercase tracking-tight">Clube de Fidelidade</h3>
+                            <p className="text-sm font-medium opacity-80">Veja suas estrelas e resgate prêmios</p>
+                        </div>
+                    </div>
+                    <ChevronRight className="w-6 h-6 opacity-60" />
+                </button>
+
                 {/* Call to Actions */}
                 <h2 className="text-xl font-bold text-slate-900 mb-4 px-1">Como você prefere?</h2>
 
@@ -122,6 +182,58 @@ export default function RestaurantLandingPage() {
 
 
             </main>
+
+            {/* Loyalty Modal */}
+            {isLoyaltyModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl relative animate-in slide-in-from-bottom-8">
+                        <button onClick={() => { setIsLoyaltyModalOpen(false); setLoyaltyResult(null); }} className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors">✕</button>
+                        
+                        <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto shadow-inner shadow-amber-200">
+                            <Star className="w-8 h-8 fill-amber-500" />
+                        </div>
+                        
+                        <h3 className="text-2xl font-black text-center text-slate-900 mb-2">Seu Cartão Fidelidade</h3>
+                        <p className="text-slate-500 text-center mb-8 font-medium">Consulte suas estrelas através do número de WhatsApp usado nos pedidos.</p>
+                        
+                        {!loyaltyResult ? (
+                            <div className="space-y-4">
+                                <input 
+                                    type="tel" 
+                                    placeholder="(00) 00000-0000" 
+                                    value={loyaltyPhone}
+                                    onChange={(e) => setLoyaltyPhone(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                />
+                                <button 
+                                    onClick={checkLoyalty}
+                                    disabled={isCheckingLoyalty || !loyaltyPhone}
+                                    className="w-full bg-amber-500 hover:bg-amber-600 border-b-4 border-amber-600 active:border-b-0 active:mt-1 disabled:opacity-50 disabled:border-amber-500 text-white font-black text-lg py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isCheckingLoyalty ? <Loader2 className="w-6 h-6 animate-spin"/> : "Consultar Minhas Estrelas"}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center animate-in zoom-in-95">
+                                <div className="text-7xl font-black text-slate-900 mb-2">{loyaltyResult.stars}</div>
+                                <div className="text-sm font-black text-amber-500 tracking-widest uppercase mb-8">Estrelas Acumuladas</div>
+                                
+                                {loyaltyResult.stars >= 10 ? (
+                                    <div className="bg-emerald-50 text-emerald-800 p-5 rounded-2xl border border-emerald-200 mb-6 font-medium">
+                                        🎉 <strong>Atingiu a meta!</strong> <br/>Você já possui 10 estrelas e ganhou uma sobremesa gratuita na sua próxima visita presencial.
+                                    </div>
+                                ) : (
+                                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-6 text-slate-600 font-medium">
+                                        Faltam <strong className="text-slate-900 text-lg">{10 - loyaltyResult.stars} estrelas</strong> para você resgatar um prêmio 100% por conta da casa!
+                                    </div>
+                                )}
+                                
+                                <button onClick={() => { setIsLoyaltyModalOpen(false); setLoyaltyResult(null); }} className="text-slate-400 font-bold hover:text-slate-700 transition-colors">Voltar ao Menu</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

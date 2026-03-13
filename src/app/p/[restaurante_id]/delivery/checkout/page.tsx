@@ -22,10 +22,11 @@ export default function DeliveryCheckoutPage() {
     const [orderMethod, setOrderMethod] = useState<"delivery" | "pickup">("delivery");
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
+    const [customerNif, setCustomerNif] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | "cash">("card");
+    const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | "cash" | "vinti4">("card");
 
-    const deliveryFee = 12.50; // Fixed delivery fee for demo
+
 
     useEffect(() => {
         const restaurantId = params.restaurante_id as string || "rest_123";
@@ -64,10 +65,11 @@ export default function DeliveryCheckoutPage() {
         return <div className="p-6 text-center text-slate-500">Restaurante não encontrado.</div>;
     }
 
+    const deliveryFee = restaurant.delivery_fee ? Number(restaurant.delivery_fee) : 0;
     const currentDeliveryFee = orderMethod === "delivery" ? deliveryFee : 0;
     const totalAmount = cartTotal + currentDeliveryFee; // Not asking for tip on delivery
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!customerName || !customerPhone || (orderMethod === "delivery" && !deliveryAddress)) {
@@ -75,10 +77,10 @@ export default function DeliveryCheckoutPage() {
             return;
         }
 
-        const txId = `tx_${Date.now()}`;
-        const finalStatus = paymentMethod === "cash" ? "pending" : "paid";
+        // For Vinti4, the order starts as pending and the webhook will update it to paid.
+        const finalStatus = (paymentMethod === "cash" || paymentMethod === "vinti4") ? "pending" : "paid";
 
-        placeOrder(
+        const result = await placeOrder(
             restaurant.id,
             0, // No table for delivery/pickup
             cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
@@ -89,11 +91,55 @@ export default function DeliveryCheckoutPage() {
             orderMethod,
             customerName,
             customerPhone,
+            customerNif || undefined,
             deliveryAddress,
             currentDeliveryFee
         );
         clearCart();
-        router.push(`/p/${restaurant.id}/success?tx=${txId}`);
+        
+        const txId = result?.orderNumber || `tx_${Date.now()}`;
+
+        // VINTI4 GATEWAY REDIRECT LOGIC
+        if (paymentMethod === "vinti4") {
+             try {
+                 const res = await fetch('/api/vinti4/checkout', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         orderId: result?.orderId || txId,
+                         amount: totalAmount,
+                         restaurantId: restaurant.id
+                     })
+                 });
+                 
+                 const data = await res.json();
+                 if (!res.ok) throw new Error(data.error || "Erro ao conectar com Vinti4");
+
+                 // Programmatically create a form to submit via POST to SISP
+                 const form = document.createElement('form');
+                 form.method = 'POST';
+                 form.action = data.actionUrl;
+                 
+                 // Append all required hidden fields
+                 Object.keys(data.formData).forEach(key => {
+                     const hiddenField = document.createElement('input');
+                     hiddenField.type = 'hidden';
+                     hiddenField.name = key;
+                     hiddenField.value = data.formData[key];
+                     form.appendChild(hiddenField);
+                 });
+
+                 document.body.appendChild(form);
+                 form.submit(); // Takes the user to SISP Gateway!
+                 return; // Do not redirect to local success yet
+             } catch (err: any) {
+                 alert(err.message);
+                 router.push(`/p/${restaurant.id}/delivery?method=${orderMethod}`); // fallback
+                 return;
+             }
+        }
+
+        router.push(`/p/${restaurant.id}/success?tx=${txId}&method=${orderMethod}`);
     };
 
     return (
@@ -159,6 +205,14 @@ export default function DeliveryCheckoutPage() {
                                 <input required type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="(00) 00000-0000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
                             </div>
 
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase flex items-center justify-between">
+                                    <span>NIF (Opcional)</span>
+                                    <span className="text-[10px] font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-400">Para Fatura</span>
+                                </label>
+                                <input type="text" maxLength={9} value={customerNif} onChange={e => setCustomerNif(e.target.value)} placeholder="000 000 000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono tracking-widest" />
+                            </div>
+
                             {orderMethod === "delivery" && (
                                 <div className="animate-in slide-in-from-top-2 fade-in duration-300">
                                     <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase mt-2">Endereço de Entrega Completo</label>
@@ -208,6 +262,24 @@ export default function DeliveryCheckoutPage() {
                                 <CreditCard className="w-5 h-5 text-indigo-500" /> Pagamento
                             </h2>
                             <div className="space-y-3">
+                                
+                                {/* Vinti4 Option */}
+                                <label className={cn(
+                                    "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all",
+                                    paymentMethod === "vinti4" ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
+                                )}>
+                                    <input type="radio" value="vinti4" checked={paymentMethod === "vinti4"} onChange={() => setPaymentMethod("vinti4")} className="sr-only" />
+                                    {/* Usually we'd put a Vinti4 Logo here, using CreditCard temporarily */}
+                                    <CreditCard className={cn("w-6 h-6", paymentMethod === "vinti4" ? "text-indigo-600" : "text-slate-400")} />
+                                    <div className="flex-1">
+                                        <div className="font-bold text-slate-900">Vinti4 (SISP) - Cabo Verde</div>
+                                        <div className="text-xs text-slate-500">Pague com Vinti4, Visa ou Mastercard</div>
+                                    </div>
+                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "vinti4" ? "border-indigo-500" : "border-slate-300")}>
+                                        {paymentMethod === "vinti4" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
+                                    </div>
+                                </label>
+
                                 <label className={cn(
                                     "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all",
                                     paymentMethod === "card" ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
@@ -215,8 +287,8 @@ export default function DeliveryCheckoutPage() {
                                     <input type="radio" value="card" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} className="sr-only" />
                                     <CreditCard className={cn("w-6 h-6", paymentMethod === "card" ? "text-indigo-600" : "text-slate-400")} />
                                     <div className="flex-1">
-                                        <div className="font-bold text-slate-900">Cartão de Crédito Online</div>
-                                        <div className="text-xs text-slate-500">Aprovação imediata</div>
+                                        <div className="font-bold text-slate-900">Na entrega (TPA Móvel)</div>
+                                        <div className="text-xs text-slate-500">O entregador levará a maquininha</div>
                                     </div>
                                     <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "card" ? "border-indigo-500" : "border-slate-300")}>
                                         {paymentMethod === "card" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
@@ -231,8 +303,8 @@ export default function DeliveryCheckoutPage() {
                                     <input type="radio" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} disabled={orderMethod === "delivery"} className="sr-only" />
                                     <Banknote className={cn("w-6 h-6", paymentMethod === "cash" && orderMethod === "pickup" ? "text-indigo-600" : "text-slate-400")} />
                                     <div className="flex-1">
-                                        <div className="font-bold text-slate-900">Na retirada da loja</div>
-                                        <div className="text-xs text-slate-500 line-clamp-1">{orderMethod === "delivery" ? "Indisponível para Delivery" : "Pague em dinheiro ou cartão ao retirar"}</div>
+                                        <div className="font-bold text-slate-900">Em Dinheiro</div>
+                                        <div className="text-xs text-slate-500 line-clamp-1">{orderMethod === "delivery" ? "Indisponível para Delivery" : "Pague ao retirar na loja"}</div>
                                     </div>
                                     <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center relative", paymentMethod === "cash" && orderMethod === "pickup" ? "border-indigo-500" : "border-slate-300")}>
                                         {paymentMethod === "cash" && orderMethod === "pickup" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}

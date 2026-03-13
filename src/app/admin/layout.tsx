@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect } from "react";
@@ -17,11 +17,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!isAuthenticated && pathname !== "/admin/login") {
             router.push("/admin/login");
         } else if (isAuthenticated && user) {
-            // Strict Role-Based Redirection locks 
-            if (user.role === "kitchen" && pathname !== "/admin/kitchen") {
-                router.push("/admin/kitchen");
-            } else if (user.role === "waiter" && pathname !== "/admin/waiter") {
-                router.push("/admin/waiter");
+            const mods = user.accessModules || [];
+            
+            // Redirect from root /admin to appropriate home dashboard
+            if (pathname === "/admin") {
+                if (user.role === 'superadmin') router.push("/superadmin");
+                else if (mods.includes("dashboard") || user.role === 'manager') router.push("/admin/dashboard");
+                else if (mods.includes("driver") || user.role === 'driver') router.push("/driver");
+                else if (mods.includes("waiter")) router.push("/admin/waiter");
+                else if (mods.includes("kitchen")) router.push("/admin/kitchen");
+                else router.push("/admin/settings");
+            }
+            
+            // Hard block logic for unauthorized modules
+            const restrictedAreas = ["/admin/dashboard", "/admin/menu", "/admin/staff", "/admin/analytics", "/admin/settings", "/admin/cashier"];
+            if (user.role === 'superadmin' && pathname.startsWith("/admin") && pathname !== "/admin/login") {
+                 router.push("/superadmin");
+            } else if (restrictedAreas.includes(pathname) && !mods.includes("dashboard") && !mods.includes("menu") && user.role !== 'manager') {
+                if (mods.includes("driver") || user.role === 'driver') router.push("/driver");
+                else if (mods.includes("waiter")) router.push("/admin/waiter");
+                else if (mods.includes("kitchen")) router.push("/admin/kitchen");
+            }
+
+            // Plan-based route protection
+            const plan = user.restaurantData?.subscriptionPlan || 'growth';
+            if (plan === 'essencial' && (pathname === '/admin/kitchen' || pathname === '/admin/analytics' || pathname === '/driver')) {
+                router.push('/admin/upgrade?feature=' + pathname.replace('/admin/', '').replace('/', ''));
             }
         }
     }, [isAuthenticated, pathname, router, user]);
@@ -33,28 +54,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <>{children}</>;
     }
 
-    // Role-based Navigation
+    // Role-based Navigation using granular accessModules
     const getAllLinks = () => {
-        if (user?.role === "kitchen") {
-            return [{ name: "Cozinha", href: "/admin/kitchen", icon: ChefHat }];
-        }
-        if (user?.role === "waiter") {
-            return [{ name: "Painel Garçom", href: "/admin/waiter", icon: Users }];
+        const mods = user?.accessModules || [];
+        const isManager = user?.role === 'manager';
+        const plan = user?.restaurantData?.subscriptionPlan || 'growth';
+        const links = [];
+
+        if (isManager || mods.includes("dashboard")) links.push({ name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard });
+        if (isManager || mods.includes("cashier")) links.push({ name: "Caixa / Mesas", href: "/admin/cashier", icon: Receipt });
+        
+        if (plan !== 'essencial') {
+            if (isManager || mods.includes("kitchen")) links.push({ name: "Cozinha", href: "/admin/kitchen", icon: ChefHat });
+        } else {
+            if (isManager || mods.includes("kitchen")) links.push({ name: "Cozinha 🔒", href: "/admin/upgrade?feature=kitchen", icon: ChefHat });
         }
 
-        // Manager gets everything
-        return [
-            { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-            { name: "Caixa / Mesas", href: "/admin/cashier", icon: Receipt },
-            { name: "Cozinha", href: "/admin/kitchen", icon: ChefHat },
-            { name: "Painel Garçom", href: "/admin/waiter", icon: Users },
-            { name: "Equipe", href: "/admin/staff", icon: UserCog },
-            { name: "Analytics", href: "/admin/analytics", icon: PieChart },
-            { name: "Cardápio", href: "/admin/menu", icon: Store },
-            { name: "Clientes", href: "/admin/customers", icon: Users },
-            { name: "Marketing", href: "/admin/marketing", icon: Megaphone },
-            { name: "Configurações", href: "/admin/settings", icon: Settings },
-        ];
+        if (isManager || mods.includes("waiter")) links.push({ name: "Painel Garçom", href: "/admin/waiter", icon: Users });
+        if (isManager || mods.includes("menu")) links.push({ name: "Cardápio", href: "/admin/menu", icon: Store });
+        if (isManager || mods.includes("dashboard")) links.push({ name: "Equipe", href: "/admin/staff", icon: UserCog });
+        
+        // Extended manager features
+        if (isManager || mods.includes("dashboard")) {
+             if (plan !== 'essencial') {
+                 links.push({ name: "Analytics", href: "/admin/analytics", icon: PieChart });
+             } else {
+                 links.push({ name: "Analytics 🔒", href: "/admin/upgrade?feature=analytics", icon: PieChart });
+             }
+
+             links.push(
+                { name: "Clientes", href: "/admin/customers", icon: Users },
+                { name: "Configurações", href: "/admin/settings", icon: Settings },
+                { name: "Assinatura SaaS", href: "/admin/billing", icon: CreditCard }
+             );
+        }
+        
+        // Remove duplicates if any
+        return links.filter((v,i,a) => a.findIndex(v2=>(v2.href===v.href))===i);
     };
 
     const navLinks = getAllLinks();
@@ -64,22 +100,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.push("/admin/login");
     };
 
-    return (
-        <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900">
+    // SaaS Suspension Block
+    if (user && user.role !== 'superadmin' && user.isRestaurantActive === false) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500 text-slate-200">
+                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 shadow-inner shadow-red-500/20">
+                    <ShieldAlert className="w-12 h-12 text-red-500" />
+                </div>
+                <h1 className="text-3xl font-black text-white tracking-tight mb-3">Assinatura Suspensa</h1>
+                <p className="text-lg text-slate-400 max-w-md mx-auto mb-8 font-medium">O acesso administrativo e operacional do seu restaurante foi temporariamente bloqueado por pendências na assinatura do TapTable.</p>
+                <div className="flex gap-4">
+                    <button onClick={handleLogout} className="px-6 py-3 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/10">
+                        Sair da Conta
+                    </button>
+                    <a href="mailto:suporte@taptable.app" className="px-6 py-3 rounded-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center">
+                        Contatar Suporte
+                    </a>
+                </div>
+            </div>
+        );
+    }
 
-            {/* Sidebar for Desktop / Header for Mobile */}
-            <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0">
+    return (
+        <div className="bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 pb-20 md:pb-0 min-h-[100dvh]">
+
+            {/* Sidebar for Desktop */}
+            <aside className="hidden md:flex md:w-64 bg-white border-r border-slate-200 flex-col shadow-sm flex-shrink-0 min-h-screen">
                 <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                     <div className="bg-primary-600 text-white p-2 rounded-lg">
                         <Store className="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="font-extrabold text-xl text-slate-900 tracking-tight">TapTable</h2>
+                        <h2 className="font-extrabold text-xl text-slate-900 tracking-tight">{user?.restaurantName || "Restaurante"}</h2>
                         <p className="text-xs font-medium text-slate-500 capitalize">{user?.role === "manager" ? "Gerência" : user?.role === "waiter" ? "Salão" : "Cozinha"}</p>
                     </div>
                 </div>
 
-                <nav className="flex-1 p-4 flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">
+                <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
                     {navLinks.map((link) => {
                         const Icon = link.icon;
                         const isActive = pathname === link.href;
@@ -101,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100 hidden md:block">
+                <div className="p-4 border-t border-slate-100 hidden md:block mt-auto">
                     <div className="mb-4 px-2">
                         <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
                         <p className="text-xs text-slate-500 truncate">{user?.email}</p>
@@ -112,6 +169,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </button>
                 </div>
             </aside>
+
+            {/* Mobile Bottom Navigation Dock */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex overflow-x-auto no-scrollbar z-50 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] pb-safe">
+                {navLinks.map(link => {
+                    const Icon = link.icon;
+                    const isActive = pathname === link.href;
+                    // For mobile bottom nav, split name to show only first word to save space
+                    const shortName = link.name.split(' / ')[0].split(' ')[0]; 
+                    return (
+                        <Link 
+                            key={link.name} 
+                            href={link.href} 
+                            className={`flex-shrink-0 flex flex-col items-center justify-center w-[72px] sm:w-20 py-2 sm:py-3 transition-colors ${isActive ? 'text-primary-600' : 'text-slate-400'}`}
+                        >
+                            <div className={cn("p-1.5 rounded-xl mb-1 transition-all", isActive ? "bg-primary-50" : "bg-transparent")}>
+                                <Icon className={cn("w-[22px] h-[22px]", isActive ? "text-primary-600" : "text-slate-500")} />
+                            </div>
+                            <span className={cn("text-[9px] sm:text-[10px] text-center w-full px-1 truncate", isActive ? "font-bold text-primary-700" : "font-medium text-slate-500")}>
+                                {shortName}
+                            </span>
+                        </Link>
+                    );
+                })}
+                <button 
+                    onClick={handleLogout} 
+                    className="flex-shrink-0 flex flex-col items-center justify-center w-[72px] sm:w-20 py-2 sm:py-3 text-red-400 hover:text-red-600 transition-colors"
+                >
+                    <div className="p-1.5 rounded-xl mb-1">
+                        <LogOut className="w-[22px] h-[22px]" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-medium">Sair</span>
+                </button>
+            </nav>
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto">

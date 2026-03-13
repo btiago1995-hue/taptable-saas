@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "./supabaseClient";
 
-export type UserRole = "manager" | "waiter" | "kitchen";
+export type UserRole = "manager" | "waiter" | "kitchen" | "driver" | "superadmin";
 
 export interface User {
     id: string;
@@ -11,11 +11,23 @@ export interface User {
     email: string;
     role: UserRole;
     restaurantId: string;
+    restaurantName?: string;
+    restaurantData?: { 
+        name?: string; 
+        nif?: string; 
+        address?: string;
+        vinti4PosId?: string;
+        vinti4PosAutCode?: string;
+        subscriptionPlan?: string;
+    };
+    isRestaurantActive: boolean;
+    accessModules: string[];
 }
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
+    loading: boolean;
     logout: () => Promise<void>;
 }
 
@@ -37,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Fetch custom profile linked to the Supabase Auth User
                 const { data: profile, error } = await supabase
                     .from('users')
-                    .select('*, restaurants(name)')
+                    .select('*, restaurants(name, is_active, nif_number, address, vinti4_pos_id, vinti4_pos_aut_code, subscription_plan)')
                     .eq('id', sessionUser.id)
                     .single();
 
@@ -47,7 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         email: sessionUser.email,
                         name: profile.name,
                         role: profile.role as UserRole,
-                        restaurantId: profile.restaurant_id
+                        restaurantId: profile.restaurant_id,
+                        restaurantName: profile.restaurants?.name || "Meu Restaurante",
+                        restaurantData: {
+                            name: profile.restaurants?.name,
+                            nif: profile.restaurants?.nif_number,
+                            address: profile.restaurants?.address,
+                            vinti4PosId: profile.restaurants?.vinti4_pos_id,
+                            vinti4PosAutCode: profile.restaurants?.vinti4_pos_aut_code,
+                            subscriptionPlan: profile.restaurants?.subscription_plan || 'growth',
+                        },
+                        isRestaurantActive: profile.restaurants?.is_active ?? true,
+                        accessModules: profile.access_modules || []
                     });
                 } else {
                     setUser(null);
@@ -87,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return null;
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading: !isLoaded, logout }}>
             {children}
         </AuthContext.Provider>
     );

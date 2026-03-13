@@ -14,26 +14,95 @@ import {
     MonitorPlay
 } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
-import { useOrders } from "@/lib/OrderContext";
+import { useOrders, LiveOrder, OrderItem } from "@/lib/OrderContext";
 import { useAuth } from "@/lib/AuthContext";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function AdminDashboard() {
     const { orders: activeOrders } = useOrders();
     const { user } = useAuth();
+    const [allHistoricalOrders, setAllHistoricalOrders] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user?.restaurantId) return;
+
+        const fetchHistory = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch all closed orders with their items to calculate top sellers
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select('*, order_items(*)')
+                    .eq('restaurant_id', user.restaurantId)
+                    .order('created_at', { ascending: false })
+                    .limit(500); // For MVP, fetching last 500 orders
+
+                if (data && !error) {
+                    setAllHistoricalOrders(data);
+                }
+            } catch (err) {
+                console.error("Dashboard DB Error:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchHistory();
+    }, [user?.restaurantId]);
 
     const statsData = useMemo(() => {
-        const totalRevenue = activeOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-        const totalTips = activeOrders.reduce((sum, o) => sum + o.tip, 0);
+        // We use allHistoricalOrders to give a real representation of all time or recent history
+        const sourceData = allHistoricalOrders.length > 0 ? allHistoricalOrders : activeOrders;
+        
+        const totalRevenue = sourceData.reduce((sum, o) => sum + (o.total_amount || o.totalAmount || 0), 0);
+        const totalTips = sourceData.reduce((sum, o) => sum + (o.tip || 0), 0);
         const tipPercentage = totalRevenue > 0 ? ((totalTips / totalRevenue) * 100).toFixed(1) : "0";
 
         return {
             revenue: totalRevenue,
-            avgTicket: activeOrders.length > 0 ? (totalRevenue / activeOrders.length) : 0,
-            tipPercentage: `${tipPercentage}%`
+            avgTicket: sourceData.length > 0 ? (totalRevenue / sourceData.length) : 0,
+            tipPercentage: `${tipPercentage}%`,
+            orderCount: sourceData.length
         };
-    }, [activeOrders]);
+    }, [activeOrders, allHistoricalOrders]);
+
+    const chartData = useMemo(() => {
+        if (allHistoricalOrders.length === 0) return [];
+        
+        // Group revenue by day
+        const daysMap: Record<string, number> = {};
+        allHistoricalOrders.forEach(o => {
+           if(o.status !== "delivered") return; // Optional: Only count completed
+           const d = new Date(o.created_at || o.createdAt);
+           const dayStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); 
+           daysMap[dayStr] = (daysMap[dayStr] || 0) + (o.total_amount || o.totalAmount || 0);
+        });
+
+        // Convert to array and reverse to chronological order (since fetch was descending)
+        return Object.entries(daysMap).map(([name, Total]) => ({ name, Total })).reverse().slice(-7);
+    }, [allHistoricalOrders]);
+
+    const topItems = useMemo(() => {
+        const itemCounts: Record<string, {name: string, count: number, revenue: number}> = {};
+        allHistoricalOrders.forEach(order => {
+             const items = order.order_items || order.items || [];
+             items.forEach((item: any) => {
+                 if(!itemCounts[item.name]) {
+                     itemCounts[item.name] = { name: item.name, count: 0, revenue: 0 };
+                 }
+                 itemCounts[item.name].count += (item.quantity || 1);
+                 itemCounts[item.name].revenue += ((item.quantity || 1) * item.price);
+             });
+        });
+
+        return Object.values(itemCounts)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5); // Top 5
+    }, [allHistoricalOrders]);
 
     const activeTableSet = useMemo(() => {
         const active = new Set<number>();
@@ -46,10 +115,10 @@ export default function AdminDashboard() {
     }, [activeOrders]);
 
     const stats = [
-        { label: "Faturamento Diário", value: formatCurrency(statsData.revenue), change: "+12.5%", icon: DollarSign },
-        { label: "Ticket Médio", value: formatCurrency(statsData.avgTicket), change: "+4.2%", icon: TrendingUp },
-        { label: "Tempo Checkout", value: "1.2 min", change: "-15%", icon: Clock },
-        { label: "Gorjeta Média", value: statsData.tipPercentage, change: "+2%", icon: Wallet },
+        { label: "Faturamento Histórico", value: formatCurrency(statsData.revenue), change: "Total", icon: DollarSign },
+        { label: "Ticket Médio", value: formatCurrency(statsData.avgTicket), change: "~", icon: TrendingUp },
+        { label: "Total de Pedidos", value: statsData.orderCount.toString(), change: "Recentes", icon: Receipt },
+        { label: "Gorjeta Média", value: statsData.tipPercentage, change: "T.M.", icon: Wallet },
     ];
 
     return (
@@ -83,21 +152,39 @@ export default function AdminDashboard() {
             {/* Main Charts Area */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Revenue Chart Mock */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 flex flex-col">
+                {/* Revenue Chart */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 flex flex-col min-h-[300px]">
                     <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        Evolução de Faturamento
+                        Faturamento (Últimos Dias)
                     </h3>
-                    <div className="flex-1 bg-slate-50 rounded-xl border border-slate-100 flex items-end p-4 gap-2 h-64">
-                        {/* Fake bar chart */}
-                        {[40, 60, 45, 80, 50, 95, 75].map((height, idx) => (
-                            <div key={idx} className="flex-1 bg-primary-100 hover:bg-primary-200 rounded-t-md relative group transition-colors" style={{ height: `${height}%` }}>
-                                <div className="absolute bottom-full mb-2 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
-                                    {formatCurrency(height * 1500)}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    {isLoading ? (
+                        <div className="flex-1 flex items-center justify-center text-slate-400 font-medium">Analisando dados...</div>
+                    ) : chartData.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center text-slate-400 font-medium bg-slate-50 rounded-xl border border-slate-100">
+                            Nenhuma venda registrada ainda.
+                        </div>
+                    ) : (
+                        <div className="flex-1 w-full h-full min-h-[220px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                    <XAxis 
+                                        dataKey="name" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                                        dy={10} 
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: '#f8fafc' }}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }}
+                                        formatter={(value: any) => [formatCurrency(Number(value) || 0), "Faturamento"]}
+                                        labelStyle={{ color: '#64748b', fontWeight: 'bold', marginBottom: '4px' }}
+                                    />
+                                    <Bar dataKey="Total" fill="#4f46e5" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
                 </div>
 
                 {/* Live POS / Table Heatmap Mock */}
@@ -128,26 +215,28 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Employee Ranking Mock */}
+                {/* Top Selling Items */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-3">
                     <h3 className="font-bold text-slate-800 mb-6 border-b border-slate-100 pb-4">
-                        Ranking de Equipe (Baseado em Gorjetas & Avaliações)
+                        Favoritos da Casa (Pratos Mais Vendidos)
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                            { name: "Carlos Silva", rating: "4.9", tips: formatCurrency(32000), rank: 1 },
-                            { name: "Ana Maria", rating: "4.8", tips: formatCurrency(28500), rank: 2 },
-                            { name: "João Pedro", rating: "4.7", tips: formatCurrency(25000), rank: 3 },
-                        ].map((employee) => (
-                            <div key={employee.rank} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary-200 transition-colors">
-                                <div className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-lg ${employee.rank === 1 ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-200 text-slate-600'
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {isLoading ? (
+                            <div className="text-slate-400 px-2 font-medium">Carregando pratos...</div>
+                        ) : topItems.length === 0 ? (
+                            <div className="text-slate-400 px-2 font-medium">Nenhum pedido finalizado no histórico.</div>
+                        ) : topItems.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary-200 transition-colors">
+                                <div className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-lg ${idx === 0 ? 'bg-yellow-100 text-yellow-600' : 
+                                    idx === 1 ? 'bg-slate-200 text-slate-600' :
+                                    idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-primary-50 text-primary-600'
                                     }`}>
-                                    #{employee.rank}
+                                    #{idx + 1}
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-900">{employee.name}</h4>
+                                <div className="min-w-0 pr-2">
+                                    <h4 className="font-bold text-slate-900 truncate">{item.name}</h4>
                                     <p className="text-xs text-slate-500 font-medium whitespace-nowrap">
-                                        ⭐ {employee.rating} | Gorjetas: {employee.tips}
+                                        Vendas: {item.count} un. | Gerou: {formatCurrency(item.revenue)}
                                     </p>
                                 </div>
                             </div>

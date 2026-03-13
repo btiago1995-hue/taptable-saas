@@ -1,15 +1,29 @@
 "use client";
 
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
-import { AlertCircle, CheckCircle2, ChefHat, Clock, UtensilsCrossed, MonitorPlay, Play, Truck, Store } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChefHat, Clock, UtensilsCrossed, MonitorPlay, Play, Truck, Store, Volume2, VolumeX, Printer } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { formatCurrency, cn } from "@/lib/utils";
+import { openWaybillWindow } from "@/lib/ReceiptWaybill";
 
 export default function KitchenDashboard() {
     const { orders: activeOrders, updateOrderStatus, placeOrder } = useOrders();
     const { user } = useAuth();
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [isMuted, setIsMuted] = useState(false);
+    
+    // Track previous order count to detect new arrivals
+    const prevNewCount = useRef(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Initialize audio object once
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            audioRef.current = new Audio('/bell.ogg');
+            audioRef.current.volume = 0.8;
+        }
+    }, []);
 
     // Group orders into columns
     const columns = useMemo(() => {
@@ -23,6 +37,16 @@ export default function KitchenDashboard() {
             history: [...readyOrders].reverse()
         };
     }, [activeOrders]);
+
+    // Ring bell if new orders arrive
+    useEffect(() => {
+        const currentNewCount = columns.new.length;
+        if (currentNewCount > prevNewCount.current && !isMuted && audioRef.current) {
+            // Play sound only if the number of new orders increased
+            audioRef.current.play().catch(e => console.log("Audio autoplay prevented by browser", e));
+        }
+        prevNewCount.current = currentNewCount;
+    }, [columns.new.length, isMuted]);
 
     const handleAction = (orderId: string, currentStatus: string) => {
         if (currentStatus === "new") updateOrderStatus(orderId, "preparing");
@@ -60,6 +84,15 @@ export default function KitchenDashboard() {
                     <p className="text-slate-500 font-medium mt-1 ml-11">Kitchen Display System (Em tempo real)</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsMuted(!isMuted)}
+                        className={`px-3 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors border flex items-center gap-2 ${
+                            isMuted ? "bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200" : "bg-white border-blue-200 text-blue-600 hover:bg-blue-50"
+                        }`}
+                        title={isMuted ? "Ativar Som" : "Silenciar"}
+                    >
+                        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </button>
                     <button
                         onClick={handleCreateTestOrder}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
@@ -109,7 +142,24 @@ export default function KitchenDashboard() {
                     <div className="p-4 flex-1 overflow-y-auto space-y-4">
                         {columns.preparing.length === 0 && <p className="text-center text-slate-400 py-8 text-sm font-medium">Cozinha livre.</p>}
                         {columns.preparing.map(order => (
-                            <OrderCard key={order.id} order={order} bg="bg-amber-50/50 border-amber-200" onAction={() => handleAction(order.id, "preparing")} btnLabel={order.orderType === "delivery" || order.orderType === "pickup" ? "Pronto para Entrega" : "Pronto p/ Servir"} btnColor="bg-emerald-600 hover:bg-emerald-700 text-white" />
+                            <OrderCard 
+                                key={order.id} 
+                                order={order} 
+                                bg="bg-amber-50/50 border-amber-200" 
+                                onAction={() => handleAction(order.id, "preparing")} 
+                                btnLabel={order.orderType === "delivery" || order.orderType === "pickup" ? "Pronto para Entrega" : "Pronto p/ Servir"} 
+                                btnColor="bg-emerald-600 hover:bg-emerald-700 text-white" 
+                                onPrintWaybill={
+                                    order.orderType === 'delivery' 
+                                    ? () => openWaybillWindow({
+                                        order, 
+                                        restaurantName: user?.restaurantData?.name || "Restaurante Parceiro",
+                                        restaurantNif: user?.restaurantData?.nif || "000000000",
+                                        restaurantAddress: user?.restaurantData?.address || ""
+                                    })
+                                    : undefined
+                                }
+                            />
                         ))}
                     </div>
                 </div>
@@ -136,14 +186,14 @@ export default function KitchenDashboard() {
 }
 
 // Helper Card Component
-function OrderCard({ order, bg, onAction, btnLabel, btnColor, readOnly = false }: any) {
+function OrderCard({ order, bg, onAction, btnLabel, btnColor, readOnly = false, onPrintWaybill }: any) {
     const timeString = new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const isDelivery = order.orderType === "delivery";
     const isPickup = order.orderType === "pickup";
     const isInStore = !isDelivery && !isPickup;
 
-    const shortId = order.id.split('_')[2] || "000";
+    const shortId = order.orderNumber || order.id.split('_')[2] || "000";
 
     return (
         <div className={cn(
@@ -196,12 +246,22 @@ function OrderCard({ order, bg, onAction, btnLabel, btnColor, readOnly = false }
             </div>
 
             {!readOnly && (
-                <button
-                    onClick={onAction}
-                    className={`w-full py-2.5 rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors shadow-sm ${btnColor}`}
-                >
-                    <Play className="w-4 h-4" fill="currentColor" /> {btnLabel}
-                </button>
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={onAction}
+                        className={`w-full py-2.5 rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors shadow-sm ${btnColor}`}
+                    >
+                        <Play className="w-4 h-4" fill="currentColor" /> {btnLabel}
+                    </button>
+                    {onPrintWaybill && (
+                        <button
+                            onClick={onPrintWaybill}
+                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors border border-slate-200"
+                        >
+                            <Printer className="w-3 h-3" /> Imprimir Guia de Transporte
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

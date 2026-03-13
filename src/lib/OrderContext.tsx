@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { supabase } from "./supabaseClient";
 import { useAuth } from "./AuthContext";
 
-export type OrderStatus = "new" | "preparing" | "ready" | "delivered";
-export type PaymentMethod = "apple_pay" | "card" | "cash" | "pix";
+export type OrderStatus = "new" | "preparing" | "ready" | "delivering" | "delivered";
+export type PaymentMethod = "apple_pay" | "card" | "cash" | "pix" | "vinti4";
 export type PaymentStatus = "paid" | "pending";
 
 export interface OrderItem {
@@ -31,8 +31,10 @@ export interface LiveOrder {
     orderType?: "in_store" | "delivery" | "pickup";
     customerName?: string;
     customerPhone?: string;
+    customerNif?: string;
     deliveryAddress?: string;
     deliveryFee?: number;
+    orderNumber?: string;
     createdAt: string;
 }
 
@@ -49,9 +51,10 @@ interface OrderContextType {
         orderType?: "in_store" | "delivery" | "pickup",
         customerName?: string,
         customerPhone?: string,
+        customerNif?: string,
         deliveryAddress?: string,
         deliveryFee?: number
-    ) => void;
+    ) => Promise<{ orderId: string; orderNumber: string } | void>;
     updateOrderStatus: (orderId: string, newStatus: OrderStatus) => void;
     updatePaymentStatus: (orderId: string, newStatus: PaymentStatus) => void;
     markItemDelivered: (orderId: string, itemId: string) => void;
@@ -104,36 +107,58 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
             // Subscribe to realtime updates on orders table
             subscription = supabase
-                .channel('realtime_orders')
+                .channel(`realtime_orders_${restaurantId}`)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, async (payload) => {
                     if (payload.eventType === 'INSERT') {
-                        // The payload.new contains the raw order, but we also need its items
-                        const { data: fullOrder } = await supabase
-                            .from('orders')
-                            .select('*, order_items(*)')
-                            .eq('id', payload.new.id)
-                            .single();
-                            
-                        if (fullOrder) {
-                            setOrders(prev => {
-                                // Prevent duplicates if the order is already in state
-                                if (prev.some(o => o.id === fullOrder.id)) return prev;
-                                return [...prev, mapDbOrderToLiveOrder(fullOrder)];
-                            });
-                        }
+                        // Adding a short delay because the client inserts 'orders' then 'order_items' sequentially.
+                        // We must wait for 'order_items' to commit before fetching the full joined object.
+                        setTimeout(async () => {
+                            const { data: fullOrder } = await supabase
+                                .from('orders')
+                                .select('*, order_items(*)')
+                                .eq('id', payload.new.id)
+                                .single();
+                                
+                            if (fullOrder) {
+                                setOrders(prev => {
+                                    // Prevent duplicates if the order is already in state
+                                    if (prev.some(o => o.id === fullOrder.id)) return prev;
+                                    return [...prev, mapDbOrderToLiveOrder(fullOrder)];
+                                });
+                            }
+                        }, 800);
                     } else if (payload.eventType === 'UPDATE') {
-                        // Fetch the full structure to guarantee React UI doesn't crash from missing nested data
-                        const { data: fullOrder } = await supabase
-                            .from('orders')
-                            .select('*, order_items(*)')
-                            .eq('id', payload.new.id)
-                            .single();
-
-                        if (fullOrder) {
-                            setOrders(prev => prev.map(o => 
-                                o.id === payload.new.id ? mapDbOrderToLiveOrder(fullOrder) : o
-                            ));
-                        }
+                        // Fast merge operation. Do not do a huge API heavy select fetch 
+                        // as it causes state wiping race conditions. 
+                        setOrders(prev => {
+                            if (!prev.some(o => o.id === payload.new.id)) {
+                                // Edge Case: we missed the INSERT, so we slowly fetch it.
+                                setTimeout(async () => {
+                                    const { data: fullOrder } = await supabase.from('orders').select('*, order_items(*)').eq('id', payload.new.id).single();
+                                    if (fullOrder) {
+                                        setOrders(curr => {
+                                            if (curr.some(x => x.id === fullOrder.id)) return curr;
+                                            return [...curr, mapDbOrderToLiveOrder(fullOrder)].sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                                        });
+                                    }
+                                }, 500);
+                                return prev;
+                            }
+                            
+                            // Normal Flow: Instantly merge lightweight update payload
+                            return prev.map(o => {
+                                if (o.id === payload.new.id) {
+                                    return {
+                                        ...o,
+                                        status: payload.new.status,
+                                        paymentStatus: payload.new.payment_status,
+                                        paymentMethod: payload.new.payment_method,
+                                        tableNumber: payload.new.table_number,
+                                    };
+                                }
+                                return o;
+                            });
+                        });
                     } else if (payload.eventType === 'DELETE') {
                         setOrders(prev => prev.filter(o => o.id !== payload.old.id));
                     }
@@ -188,8 +213,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             orderType: dbOrder.order_type,
             customerName: dbOrder.customer_name,
             customerPhone: dbOrder.customer_phone,
+            customerNif: dbOrder.customer_nif,
             deliveryAddress: dbOrder.delivery_address,
             deliveryFee: dbOrder.delivery_fee,
+            orderNumber: dbOrder.order_number,
             createdAt: dbOrder.created_at
         };
     };
@@ -205,12 +232,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         orderType: "in_store" | "delivery" | "pickup" = "in_store",
         customerName?: string,
         customerPhone?: string,
+        customerNif?: string,
         deliveryAddress?: string,
         deliveryFee?: number
     ) => {
         // Fallback to targetRestaurantId or the resolved restaurantId context
         const finalRestId = targetRestaurantId || restaurantId;
         if (!finalRestId) return;
+
+        const orderNumber = Math.random().toString(36).substring(2, 6).toUpperCase(); // e.g., "A4F9"
 
         const newOrderData = {
             restaurant_id: finalRestId,
@@ -224,8 +254,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             order_type: orderType,
             customer_name: customerName,
             customer_phone: customerPhone,
+            customer_nif: customerNif,
             delivery_address: deliveryAddress,
-            delivery_fee: deliveryFee || 0
+            delivery_fee: deliveryFee || 0,
+            order_number: orderNumber
         };
 
         const { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert([newOrderData]).select('id').single();
@@ -243,37 +275,70 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         }));
 
         await supabase.from('order_items').insert(orderItemsData);
+
+        if (customerPhone) {
+            try {
+                // Award 1 loyalty star per order. 
+                // Using RPC to avoid race conditions.
+                await supabase.rpc('increment_loyalty_stars', {
+                    p_restaurant_id: finalRestId,
+                    p_phone_number: customerPhone,
+                    p_name: customerName || '',
+                    p_stars_to_add: 1
+                });
+            } catch (err) {
+                console.error("Failed to add loyalty points", err);
+            }
+        }
+
+        return { orderId: insertedOrder.id, orderNumber };
     };
 
     const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+        // Optimistic UI Update for instant feedback on KDS and Waiter panels
+        setOrders(prev => prev.map(o => {
+            if (o.id === orderId) {
+                const newDeliveredItemIds = newStatus === "delivered" ? o.items.map(i => i.id) : o.deliveredItemIds;
+                return { ...o, status: newStatus, deliveredItemIds: newDeliveredItemIds };
+            }
+            return o;
+        }));
+
         await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+        
         if (newStatus === "delivered") {
             await supabase.from('order_items').update({ delivered: true }).eq('order_id', orderId);
         }
     };
 
     const updatePaymentStatus = async (orderId: string, newStatus: PaymentStatus) => {
+        // Optimistic update for instant Waiter UI feedback
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: newStatus } : o));
         await supabase.from('orders').update({ payment_status: newStatus }).eq('id', orderId);
     };
 
     const markItemDelivered = async (orderId: string, itemId: string) => {
-        setOrders(prev => prev.map(o => {
-            if (o.id === orderId) {
-                const newDelivered = [...o.deliveredItemIds, itemId];
-                const allDelivered = o.items.every(i => newDelivered.includes(i.id));
-                return { ...o, deliveredItemIds: newDelivered, status: allDelivered ? "delivered" : o.status };
-            }
-            return o;
-        }));
+        let shouldMarkOrderDelivered = false;
+
+        setOrders(prev => {
+            return prev.map(o => {
+                if (o.id === orderId) {
+                    const deliveredSet = new Set(o.deliveredItemIds);
+                    deliveredSet.add(itemId);
+                    const allDelivered = o.items.every(i => deliveredSet.has(i.id));
+                    if (allDelivered && o.status !== "delivered") {
+                        shouldMarkOrderDelivered = true;
+                    }
+                    return { ...o, deliveredItemIds: Array.from(deliveredSet), status: allDelivered ? "delivered" : o.status };
+                }
+                return o;
+            });
+        });
 
         await supabase.from('order_items').update({ delivered: true }).eq('id', itemId);
 
-        const currentOrder = orders.find(o => o.id === orderId);
-        if (currentOrder) {
-            const allWillBeDelivered = currentOrder.items.every(i => currentOrder.deliveredItemIds.includes(i.id) || i.id === itemId);
-            if (allWillBeDelivered) {
-                await supabase.from('orders').update({ status: 'delivered' }).eq('id', orderId);
-            }
+        if (shouldMarkOrderDelivered) {
+            await supabase.from('orders').update({ status: 'delivered' }).eq('id', orderId);
         }
     };
 
