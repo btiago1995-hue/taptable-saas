@@ -68,6 +68,7 @@ export default function KitchenDashboard() {
             "delivery", // orderType
             "João Silva (Teste)", // customerName
             "11999999999", // customerPhone
+            undefined, // customerNif
             "Rua das Flores, 123 - Centro", // deliveryAddress
             5.0 // deliveryFee
         );
