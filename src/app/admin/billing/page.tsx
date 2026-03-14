@@ -9,16 +9,25 @@ export default function SaaSBillingPage() {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
-    // Mock Subscription Data - In a real SaaS, this comes from a Stripe/SISP webhook or `subscriptions` table.
+    let planName = "Growth (Mensal)";
+    let amountDue = 4990;
+    if (user?.subscriptionPlan === 'essencial') {
+        planName = "Essencial (Mensal)";
+        amountDue = 1990;
+    } else if (user?.subscriptionPlan === 'elite') {
+        planName = "Elite (Mensal)";
+        amountDue = 9900;
+    }
+
     const subscriptionData = {
-        planName: "TapTable Pro (Anual)",
+        planName,
         status: "active",
         nextBillingDate: "15 de Abril de 2026",
-        amountDue: 5900, // 5.900 CVE / month roughly
+        amountDue,
         currency: "CVE",
         history: [
-            { id: "INV-001", date: "15 Fev 2026", amount: 5900, status: "paid" },
-            { id: "INV-002", date: "15 Mar 2026", amount: 5900, status: "paid" }
+            { id: "INV-001", date: "15 Fev 2026", amount: amountDue, status: "paid" },
+            { id: "INV-002", date: "15 Mar 2026", amount: amountDue, status: "paid" }
         ]
     };
 

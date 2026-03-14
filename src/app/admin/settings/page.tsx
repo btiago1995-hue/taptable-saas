@@ -92,7 +92,7 @@ export default function AdminSettings() {
         setSaveSuccess(false);
         try {
             if (user?.restaurantId) {
-                await supabase.from('restaurants').update({ 
+                const { error } = await supabase.from('restaurants').update({ 
                     name: restaurantName,
                     nif_number: nifNumber,
                     address: address,
@@ -104,11 +104,14 @@ export default function AdminSettings() {
                     google_review_link: googleLink
                 }).eq('id', user.restaurantId);
                 
+                if (error) throw error;
+                
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 3000); // Hide success message after 3 seconds
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error saving restaurant settings", err);
+            alert("Erro ao gravar definições: " + (err.message || 'Falha na BD.'));
         } finally {
             setIsSaving(false);
         }
