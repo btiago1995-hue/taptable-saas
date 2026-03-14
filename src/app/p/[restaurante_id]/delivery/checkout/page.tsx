@@ -17,6 +17,7 @@ export default function DeliveryCheckoutPage() {
 
     const [restaurant, setRestaurant] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form states
     const [orderMethod, setOrderMethod] = useState<"delivery" | "pickup">("delivery");
@@ -80,7 +81,9 @@ export default function DeliveryCheckoutPage() {
         // For Vinti4, the order starts as pending and the webhook will update it to paid.
         const finalStatus = (paymentMethod === "cash" || paymentMethod === "vinti4") ? "pending" : "paid";
 
-        const result = await placeOrder(
+        setIsSubmitting(true);
+        try {
+            const result = await placeOrder(
             restaurant.id,
             0, // No table for delivery/pickup
             cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
@@ -134,12 +137,20 @@ export default function DeliveryCheckoutPage() {
                  return; // Do not redirect to local success yet
              } catch (err: any) {
                  alert(err.message);
+                 setIsSubmitting(false);
                  router.push(`/p/${restaurant.id}/delivery?method=${orderMethod}`); // fallback
                  return;
              }
         }
 
         router.push(`/p/${restaurant.id}/success?tx=${txId}&method=${orderMethod}`);
+        // We do not set isSubmitting to false here because we are redirecting away. 
+        // Keeping it true prevents the user from clicking again during the redirect.
+    } catch (e: any) {
+        console.error("Failed to place order", e);
+        alert("Ocorreu um erro ao processar o seu pedido. Tente novamente.");
+        setIsSubmitting(false);
+    }
     };
 
     return (
@@ -313,8 +324,14 @@ export default function DeliveryCheckoutPage() {
                             </div>
                         </div>
 
-                        <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl flex items-center justify-center shadow-lg active:scale-[0.98] transition-all">
-                            Finalizar Pedido • {formatCurrency(totalAmount)}
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all">
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" /> Processando...
+                                </>
+                            ) : (
+                                `Finalizar Pedido • ${formatCurrency(totalAmount)}`
+                            )}
                         </button>
                     </form>
                 )}

@@ -17,8 +17,9 @@ export default function CheckoutPage() {
     const { placeOrder } = useOrders();
 
     const [restaurant, setRestaurant] = useState<any>(null);
-    const [tipPercentage, setTipPercentage] = useState(0);
+    const [tipPercentage, setTipPercentage] = useState<number>(0);
     const [customerNif, setCustomerNif] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -59,27 +60,44 @@ export default function CheckoutPage() {
     const totalAmount = cartTotal + tipAmount;
 
     const handlePaymentSuccess = async (transactionId: string, method: string, status: string) => {
-        const tableNumber = Number(params.mesa_id) || 1;
-        const result = await placeOrder(
-            restaurant.id,
-            tableNumber,
-            cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
-            cartTotal,
-            tipAmount,
-            method as any,
-            status as any,
-            "in_store",
-            undefined, // customerName
-            undefined, // customerPhone
-            customerNif || undefined
-        );
-        clearCart();
-        const txId = result?.orderNumber || transactionId;
-        router.push(`/p/${restaurant.id}/success?tx=${txId}&table=${params.mesa_id || 1}`);
+        setIsSubmitting(true);
+        try {
+            // Here we explicitly define what payment method creates a pending state
+            const finalStatus = (method === "cash" || method === "vinti4") ? "pending" : "paid";
+
+            const result = await placeOrder(
+                restaurant.id,
+                parseInt(params.mesa_id as string) || 1,
+                cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity || 1 })),
+                cartTotal,
+                tipAmount,
+                method as any,
+                finalStatus as any,
+                "in_store",
+                undefined, // customerName
+                undefined, // customerPhone
+                customerNif || undefined
+            );
+            clearCart();
+            const txId = result?.orderNumber || transactionId;
+            router.push(`/p/${restaurant.id}/success?tx=${txId}&table=${params.mesa_id || 1}`);
+        } catch (err) {
+            console.error("Failed to place order", err);
+            alert("Ocorreu um erro ao processar seu pedido. Tente novamente.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900">
+        <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900 relative">
+            {isSubmitting && (
+                <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in duration-200">
+                    <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900">Enviando para a Cozinha...</h3>
+                    <p className="text-slate-500 text-sm mt-2">Aguarde um momento</p>
+                </div>
+            )}
             {/* Header */}
             <header className="bg-white px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-10">
                 <div className="max-w-md mx-auto flex items-center gap-3">
