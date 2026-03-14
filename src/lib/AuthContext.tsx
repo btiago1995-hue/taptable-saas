@@ -20,6 +20,7 @@ export interface User {
         vinti4PosAutCode?: string;
         subscriptionPlan?: string;
     };
+    subscriptionPlan?: string;
     isRestaurantActive: boolean;
     accessModules: string[];
 }
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             vinti4PosAutCode: profile.restaurants?.vinti4_pos_aut_code,
                             subscriptionPlan: profile.restaurants?.subscription_plan || 'growth',
                         },
+                        subscriptionPlan: profile.restaurants?.subscription_plan || 'growth',
                         isRestaurantActive: profile.restaurants?.is_active ?? true,
                         accessModules: profile.access_modules || []
                     });
