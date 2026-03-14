@@ -53,26 +53,7 @@ export default function KitchenDashboard() {
         if (currentStatus === "preparing") updateOrderStatus(orderId, "ready");
     };
 
-    const handleCreateTestOrder = () => {
-        placeOrder(
-            user?.restaurantId || "",
-            0,
-            [
-                { id: "item_1", name: "Pizza Margherita", price: 45.0, quantity: 1 },
-                { id: "item_2", name: "Coca-Cola 2L", price: 12.0, quantity: 1 }
-            ],
-            57.0, // subtotal
-            0, // tip
-            "pix", // paymentMethod
-            "paid", // paymentStatus
-            "delivery", // orderType
-            "João Silva (Teste)", // customerName
-            "11999999999", // customerPhone
-            undefined, // customerNif
-            "Rua das Flores, 123 - Centro", // deliveryAddress
-            5.0 // deliveryFee
-        );
-    };
+
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-[calc(100vh-8rem)] flex flex-col">
@@ -94,12 +75,7 @@ export default function KitchenDashboard() {
                     >
                         {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                     </button>
-                    <button
-                        onClick={handleCreateTestOrder}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
-                    >
-                        <Truck className="w-4 h-4" /> Simular Delivery
-                    </button>
+
                     <div className="flex bg-amber-50 rounded-xl shadow-sm border border-amber-200 px-4 py-2 items-center gap-2 text-amber-800">
                         <ChefHat className="w-5 h-5" />
                         <span className="font-bold">{columns.new.length + columns.preparing.length} Pedidos Ativos</span>
