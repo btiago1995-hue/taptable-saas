@@ -242,56 +242,36 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
         const orderNumber = Math.random().toString(36).substring(2, 6).toUpperCase(); // e.g., "A4F9"
 
-        const newOrderData = {
-            restaurant_id: finalRestId,
-            table_number: tableNumber,
-            subtotal,
-            tip,
-            total_amount: subtotal + tip + (deliveryFee || 0),
-            status: "new",
-            payment_method: paymentMethod,
-            payment_status: paymentStatus,
-            order_type: orderType,
-            customer_name: customerName,
-            customer_phone: customerPhone,
-            customer_nif: customerNif,
-            delivery_address: deliveryAddress,
-            delivery_fee: deliveryFee || 0,
-            order_number: orderNumber
-        };
+        const { data: insertedOrderId, error } = await supabase.rpc('place_new_order_transaction', {
+            p_restaurant_id: finalRestId,
+            p_table_number: tableNumber,
+            p_subtotal: subtotal,
+            p_tip: tip,
+            p_total_amount: subtotal + tip + (deliveryFee || 0),
+            p_status: "new",
+            p_payment_method: paymentMethod,
+            p_payment_status: paymentStatus,
+            p_order_type: orderType,
+            p_customer_name: customerName || null,
+            p_customer_phone: customerPhone || null,
+            p_customer_nif: customerNif || null,
+            p_delivery_address: deliveryAddress || null,
+            p_delivery_fee: deliveryFee || 0,
+            p_order_number: orderNumber,
+            p_items: items.map(i => ({ 
+                menu_item_id: i.id.includes('-') ? i.id : null, 
+                name: i.name, 
+                price: i.price, 
+                quantity: i.quantity 
+            }))
+        });
 
-        const { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert([newOrderData]).select('id').single();
-        if (orderErr || !insertedOrder) {
-            console.error("Failed to place order", orderErr);
-            return;
+        if (error || !insertedOrderId) {
+            console.error("Failed to place order via RPC", error);
+            throw error || new Error("A Base de Dados rejeitou a transação.");
         }
 
-        const orderItemsData = items.map(item => ({
-            order_id: insertedOrder.id,
-            menu_item_id: item.id.includes('-') ? item.id : null,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
-        }));
-
-        await supabase.from('order_items').insert(orderItemsData);
-
-        if (customerPhone) {
-            try {
-                // Award 1 loyalty star per order. 
-                // Using RPC to avoid race conditions.
-                await supabase.rpc('increment_loyalty_stars', {
-                    p_restaurant_id: finalRestId,
-                    p_phone_number: customerPhone,
-                    p_name: customerName || '',
-                    p_stars_to_add: 1
-                });
-            } catch (err) {
-                console.error("Failed to add loyalty points", err);
-            }
-        }
-
-        return { orderId: insertedOrder.id, orderNumber };
+        return { orderId: insertedOrderId, orderNumber };
     };
 
     const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
