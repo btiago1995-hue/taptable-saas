@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { MenuItem } from "@/lib/supabase";
 
 interface CartContextType {
@@ -16,6 +16,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cartItems, setCartItems] = useState<MenuItem[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem("taptable_cart");
+            if (stored) {
+                setCartItems(JSON.parse(stored));
+            }
+        } catch (e) {
+            console.error("Failed to load cart", e);
+        }
+        setIsLoaded(true);
+    }, []);
+
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem("taptable_cart", JSON.stringify(cartItems));
+        }
+    }, [cartItems, isLoaded]);
 
     const addToCart = (newItem: MenuItem) => {
         setCartItems((prevItems) => {
