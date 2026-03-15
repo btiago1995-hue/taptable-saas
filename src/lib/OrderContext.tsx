@@ -242,7 +242,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
         const orderNumber = Math.random().toString(36).substring(2, 6).toUpperCase(); // e.g., "A4F9"
 
-        const newOrderData = {
+        const newOrderData: any = {
             restaurant_id: finalRestId,
             table_number: tableNumber,
             subtotal,
@@ -254,16 +254,19 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             order_type: orderType,
             customer_name: customerName,
             customer_phone: customerPhone,
-            customer_nif: customerNif,
             delivery_address: deliveryAddress,
             delivery_fee: deliveryFee || 0,
             order_number: orderNumber
         };
 
+        if (customerNif) {
+            newOrderData.customer_nif = customerNif;
+        }
+
         const { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert([newOrderData]).select('id').single();
         if (orderErr || !insertedOrder) {
-            console.error("Failed to place order", orderErr);
-            return;
+            console.error("Failed to place order header", orderErr);
+            throw orderErr || new Error("Failed to place order");
         }
 
         const orderItemsData = items.map(item => ({
@@ -274,7 +277,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             quantity: item.quantity
         }));
 
-        await supabase.from('order_items').insert(orderItemsData);
+        const { error: itemsErr } = await supabase.from('order_items').insert(orderItemsData);
+        if (itemsErr) {
+            console.error("Failed to place order items", itemsErr);
+            throw itemsErr;
+        }
 
         if (customerPhone) {
             try {
