@@ -18,7 +18,7 @@ export default function Home() {
             <a href="#features" className="hover:text-indigo-600 transition-colors">Funcionalidades</a>
             <a href="#pricing" className="hover:text-indigo-600 transition-colors">Preços</a>
             <Link href="/admin/login" className="text-indigo-600 hover:text-indigo-700 transition-colors">Login Gerente</Link>
-            <Link href="/admin/login" className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-slate-800 transition-transform active:scale-95">
+            <Link href="/onboarding" className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-slate-800 transition-transform active:scale-95">
               Criar Conta Grátis
             </Link>
           </div>
@@ -42,7 +42,7 @@ export default function Home() {
               O ecossistema completo para o seu restaurante. Cardápio QR dinâmico, monitor de cozinha (KDS) em tempo real e painel de motoboys. Tudo na nuvem, sem maquinetas presas e sem hardware caro.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 delay-200">
-              <Link href="/admin/login" className="w-full sm:w-auto bg-indigo-600 text-white text-lg font-bold px-8 py-4 rounded-full shadow-xl shadow-indigo-600/30 hover:bg-indigo-700 hover:scale-105 transition-all flex items-center justify-center gap-2 group">
+              <Link href="/onboarding" className="w-full sm:w-auto bg-indigo-600 text-white text-lg font-bold px-8 py-4 rounded-full shadow-xl shadow-indigo-600/30 hover:bg-indigo-700 hover:scale-105 transition-all flex items-center justify-center gap-2 group">
                 Começar Teste Grátis <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <a href="#features" className="w-full sm:w-auto bg-white border-2 border-slate-200 text-slate-700 text-lg font-bold px-8 py-4 rounded-full hover:bg-slate-50 transition-colors flex items-center justify-center">
@@ -101,7 +101,7 @@ export default function Home() {
                   <span className="text-slate-400 font-medium ml-2">CVE/mês</span>
                 </div>
                 <p className="text-slate-400 mb-8 font-medium">Substitua o papel e o caos. Ideal para começar.</p>
-                <Link href="/admin/login" className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl text-center transition-colors mb-10">
+                <Link href="/onboarding" className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl text-center transition-colors mb-10">
                   Começar Trial
                 </Link>
                 <div className="space-y-4 flex-1">
@@ -131,7 +131,7 @@ export default function Home() {
                   <span className="text-indigo-200 font-medium ml-2">CVE/mês</span>
                 </div>
                 <p className="text-indigo-100 mb-8 font-medium">Tenha o ecossistema completo fluindo entre salão, delivery e cozinha.</p>
-                <Link href="/admin/login" className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-black py-4 rounded-xl text-center transition-transform active:scale-95 shadow-xl mb-10">
+                <Link href="/onboarding" className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-black py-4 rounded-xl text-center transition-transform active:scale-95 shadow-xl mb-10">
                   Testar 14 Dias Grátis
                 </Link>
                 <div className="space-y-4 flex-1">
