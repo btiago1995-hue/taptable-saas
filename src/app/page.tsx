@@ -151,17 +151,25 @@ export default function Home() {
               </div>
 
               {/* Elite Plan */}
-              <div className="bg-slate-900 rounded-3xl p-8 lg:p-10 border border-slate-800 flex flex-col h-full hover:border-slate-700 transition-colors">
-                <h3 className="text-2xl font-bold mb-2">Elite</h3>
-                <div className="mb-6">
-                  <span className="text-5xl font-black">9.900</span>
-                  <span className="text-slate-400 font-medium ml-2">CVE/mês</span>
+              <div className="bg-slate-900 rounded-3xl p-8 lg:p-10 border-2 border-amber-500/50 hover:border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.15)] flex flex-col h-full transition-all relative overflow-hidden group">
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-900 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-bl-2xl shadow-lg z-10">
+                  Premium
                 </div>
-                <p className="text-slate-400 mb-8 font-medium">Para restaurantes de alto volume e operações logísticas próprias.</p>
-                <Link href="/admin/login" className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl text-center transition-colors mb-10">
+                
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent pointer-events-none" />
+
+                <h3 className="text-2xl font-bold mb-2 text-amber-50 flex items-center gap-2 relative z-10">
+                  Elite
+                </h3>
+                <div className="mb-6 relative z-10">
+                  <span className="text-5xl font-black text-amber-500">9.900</span>
+                  <span className="text-amber-500/60 font-medium ml-2">CVE/mês</span>
+                </div>
+                <p className="text-slate-400 mb-8 font-medium relative z-10">Para restaurantes de alto volume, operações logísticas próprias e Fidelidade Master.</p>
+                <Link href="/onboarding" className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-bold py-4 rounded-xl text-center transition-all shadow-lg shadow-amber-500/25 mb-10 relative z-10 transform group-hover:scale-[1.02]">
                   Começar Agora
                 </Link>
-                <div className="space-y-4 flex-1">
+                <div className="space-y-4 flex-1 relative z-10">
                   {[
                     "Tudo do plano Growth",
                     "Sistema de Retenção e Fidelidade",
@@ -170,7 +178,7 @@ export default function Home() {
                     "Gestão Granular de Permissões"
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+                      <Check className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                       <span className="text-slate-300">{item}</span>
                     </div>
                   ))}
