@@ -106,7 +106,7 @@ export default function DriverDashboard() {
     const deliveries = useMemo(() => {
         if (!isOnline) return [];
         return activeOrders
-            .filter((o: LiveOrder) => o.orderType === "delivery" && (o.status === "ready" || o.status === "delivering"))
+            .filter((o: LiveOrder) => o.orderType === "delivery" && (o.status === "preparing" || o.status === "ready" || o.status === "delivering"))
             .reverse();
     }, [activeOrders, isOnline]);
 
@@ -172,7 +172,7 @@ export default function DriverDashboard() {
                         <div className="w-6 h-6 bg-emerald-500 rounded-full border-4 border-slate-900 shadow-[0_0_15px_rgba(16,185,129,0.5)] z-0" />
                     </div>
                 )}
-                {activeDelivery && activeDelivery.status === "ready" && (
+                {activeDelivery && (activeDelivery.status === "ready" || activeDelivery.status === "preparing") && (
                     <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                         <div className="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg mb-2 z-10 animate-bounce">
                             O Seu Restaurante
@@ -254,20 +254,20 @@ export default function DriverDashboard() {
                         <div className="flex justify-between items-center mb-6 mt-4">
                             <div>
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                    {activeDelivery.status === "ready" ? "Coleta Necessária" : "Entrega em Andamento"}
+                                    {activeDelivery.status === "preparing" ? "A Preparar" : activeDelivery.status === "ready" ? "Coleta Necessária" : "Entrega em Andamento"}
                                 </div>
                                 <h2 className="text-4xl font-black text-white tracking-tighter">
-                                    {activeDelivery.status === "ready" ? "Balcão" : "7 min"}
+                                    {activeDelivery.status === "preparing" || activeDelivery.status === "ready" ? "Balcão" : "7 min"}
                                 </h2>
                                 <p className="text-slate-300 font-medium text-lg mt-1">
-                                    {activeDelivery.status === "ready" ? "Dirija-se ao restaurante" : "1.2 km de distância"}
+                                    {activeDelivery.status === "preparing" ? "Aguarde confeção" : activeDelivery.status === "ready" ? "Dirija-se ao restaurante" : "1.2 km de distância"}
                                 </p>
                             </div>
                             <div className={cn(
                                 "w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg",
-                                activeDelivery.status === "ready" ? "bg-amber-500" : "bg-blue-600"
+                                activeDelivery.status === "delivering" ? "bg-blue-600" : "bg-amber-500"
                             )}>
-                                {activeDelivery.status === "ready" ? <Store className="w-6 h-6 text-white mb-1" /> : <Navigation className="w-6 h-6 text-white mb-1" />}
+                                {activeDelivery.status === "delivering" ? <Navigation className="w-6 h-6 text-white mb-1" /> : <Store className="w-6 h-6 text-white mb-1" />}
                             </div>
                         </div>
 
@@ -344,7 +344,14 @@ export default function DriverDashboard() {
 
                     {/* Action Button Area */}
                     <div className="p-6 bg-slate-900 border-t border-slate-800 shrink-0 pb-10">
-                        {activeDelivery.status === "ready" ? (
+                        {activeDelivery.status === "preparing" ? (
+                            <div className="w-full h-[72px] bg-slate-800 rounded-full flex flex-col items-center justify-center border border-amber-500/20 shadow-inner">
+                                <span className="text-amber-500 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Em Confeção
+                                </span>
+                                <span className="text-xs text-slate-400 mt-0.5">Aguardando a Cozinha</span>
+                            </div>
+                        ) : activeDelivery.status === "ready" ? (
                             <button
                                 onClick={() => handlePickup(activeDelivery.id)}
                                 disabled={confirmingId === activeDelivery.id}
