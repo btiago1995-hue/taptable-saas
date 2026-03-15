@@ -73,6 +73,8 @@ export default function DeliveryCheckoutPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (isSubmitting) return; // FIX: Prevent multiple taps generating 3 ghost orders
+
         if (!customerName || !customerPhone || (orderMethod === "delivery" && !deliveryAddress)) {
             alert("Por favor, preencha todos os campos obrigatórios.");
             return;
