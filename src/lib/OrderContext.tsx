@@ -242,6 +242,40 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
         const orderNumber = Math.random().toString(36).substring(2, 6).toUpperCase(); // e.g., "A4F9"
 
+        // ====== 1. TENTATIVA ATÓMICA DE ALTA VELOCIDADE ======
+        const payload = {
+            p_restaurant_id: finalRestId,
+            p_table_number: tableNumber,
+            p_subtotal: subtotal,
+            p_tip: tip,
+            p_total_amount: subtotal + tip + (deliveryFee || 0),
+            p_status: "new",
+            p_payment_method: paymentMethod,
+            p_payment_status: paymentStatus,
+            p_order_type: orderType,
+            p_customer_name: customerName || null,
+            p_customer_phone: customerPhone || null,
+            p_customer_nif: customerNif || null,
+            p_delivery_address: deliveryAddress || null,
+            p_delivery_fee: deliveryFee || 0,
+            p_order_number: orderNumber,
+            p_items: items.map(i => ({ 
+                menu_item_id: i.id.includes('-') ? i.id : null, 
+                name: i.name, 
+                price: i.price, 
+                quantity: i.quantity 
+            }))
+        };
+
+        const { data: insertedOrderId, error: rpcError } = await supabase.rpc('place_new_order_transaction', payload);
+
+        if (!rpcError && insertedOrderId) {
+            return { orderId: insertedOrderId, orderNumber };
+        }
+
+        // ====== 2. FALLBACK SEQUENCIAL (Caso a DB rejeite por desatualização (PGRST202) ou outro erro leve) ======
+        console.warn("RPC Transacional falhou ou não existe. Iniciando Fallback Sequencial.", rpcError);
+
         const newOrderData: any = {
             restaurant_id: finalRestId,
             table_number: tableNumber,
@@ -252,16 +286,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             payment_method: paymentMethod,
             payment_status: paymentStatus,
             order_type: orderType,
-            customer_name: customerName,
-            customer_phone: customerPhone,
-            delivery_address: deliveryAddress,
-            delivery_fee: deliveryFee || 0,
             order_number: orderNumber
         };
 
-        if (customerNif) {
-            newOrderData.customer_nif = customerNif;
-        }
+        if (customerName) newOrderData.customer_name = customerName;
+        if (customerPhone) newOrderData.customer_phone = customerPhone;
+        if (customerNif) newOrderData.customer_nif = customerNif;
+        if (deliveryAddress) newOrderData.delivery_address = deliveryAddress;
+        if (deliveryFee !== undefined && deliveryFee > 0) newOrderData.delivery_fee = deliveryFee;
 
         const { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert([newOrderData]).select('id').single();
         if (orderErr || !insertedOrder) {
@@ -285,8 +317,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
         if (customerPhone) {
             try {
-                // Award 1 loyalty star per order. 
-                // Using RPC to avoid race conditions.
                 await supabase.rpc('increment_loyalty_stars', {
                     p_restaurant_id: finalRestId,
                     p_phone_number: customerPhone,
