@@ -18,7 +18,7 @@ export default function OnboardingWizard() {
         email: "",
         password: "",
         restaurantName: "",
-        plan: "growth" // "essential" | "growth"
+        plan: "growth" // "essential" | "growth" | "elite"
     });
 
     const updateForm = (key: string, val: string) => {
@@ -243,10 +243,11 @@ export default function OnboardingWizard() {
                             <div className="space-y-4 flex-1">
                                 {/* Plan Card: Essencial */}
                                 <label className={cn(
-                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all hover:bg-slate-50",
-                                    formData.plan === "essential" ? "border-slate-900 bg-slate-50 ring-4 ring-slate-100" : "border-slate-200 bg-white"
+                                    "flex flex-col border-2 rounded-2xl p-4 cursor-pointer transition-all relative",
+                                    formData.plan === "essential" ? "border-slate-900 bg-slate-50 ring-4 ring-slate-100" : "border-slate-200 bg-white hover:border-slate-300",
+                                    formData.plan !== "essential" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
-                                    <div className="flex justify-between items-center mb-2">
+                                    <div className="flex justify-between items-center mb-1">
                                         <div className="flex items-center gap-3">
                                             <input 
                                                 type="radio" 
@@ -261,16 +262,17 @@ export default function OnboardingWizard() {
                                         </div>
                                         <span className="font-bold text-slate-600">1.990 CVE</span>
                                     </div>
-                                    <p className="text-sm font-medium text-slate-500 ml-8">Cardápio QR e Ponto de Venda. Ideal para novos negócios.</p>
+                                    <p className="text-sm font-medium text-slate-500 ml-8">Cardápio QR e Ponto de Venda (Salão).</p>
                                 </label>
 
                                 {/* Plan Card: Growth */}
                                 <label className={cn(
-                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
-                                    formData.plan === "growth" ? "border-indigo-600 bg-indigo-50/30 ring-4 ring-indigo-50" : "border-slate-200 bg-white hover:border-indigo-300"
+                                    "flex flex-col border-2 rounded-2xl p-4 cursor-pointer transition-all relative overflow-hidden",
+                                    formData.plan === "growth" ? "border-indigo-600 bg-indigo-50/30 ring-4 ring-indigo-50 z-10 scale-[1.02]" : "border-slate-200 bg-white hover:border-indigo-300",
+                                    formData.plan !== "growth" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
-                                    <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl">Recomendado</div>
-                                    <div className="flex justify-between items-center mb-2">
+                                    <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl">Popular</div>
+                                    <div className="flex justify-between items-center mb-1">
                                         <div className="flex items-center gap-3">
                                             <input 
                                                 type="radio" 
@@ -285,7 +287,35 @@ export default function OnboardingWizard() {
                                         </div>
                                         <span className="font-bold text-indigo-600">4.990 CVE</span>
                                     </div>
-                                    <p className="text-sm font-medium text-slate-600 ml-8">KDS, App de Motoristas e Analytics Realtime.</p>
+                                    <p className="text-sm font-medium text-slate-600 ml-8">Inclui KDS, Display de Cobertura e App Entrega.</p>
+                                </label>
+
+                                {/* Plan Card: Elite (Premium Dark Theme) */}
+                                <label className={cn(
+                                    "flex flex-col border-2 rounded-2xl p-4 cursor-pointer transition-all relative overflow-hidden",
+                                    formData.plan === "elite" ? "border-amber-500 bg-slate-900 ring-4 ring-amber-500/20 z-10 scale-[1.02]" : "border-slate-800 bg-slate-900 hover:border-amber-500/50",
+                                    formData.plan !== "elite" && formData.plan ? "opacity-60 hover:opacity-100" : ""
+                                )}>
+                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-900 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl shadow-lg">Premium</div>
+                                    
+                                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+
+                                    <div className="flex justify-between items-center mb-1 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <input 
+                                                type="radio" 
+                                                name="plan" 
+                                                value="elite" 
+                                                className="w-5 h-5 accent-amber-500 bg-slate-800 border-slate-700"
+                                                checked={formData.plan === "elite"}
+                                                onChange={() => updateForm('plan', 'elite')}
+                                                disabled={isLoading}
+                                            />
+                                            <span className="font-bold text-lg text-amber-50 tracking-wide">Elite</span>
+                                        </div>
+                                        <span className="font-bold text-amber-400">9.900 CVE</span>
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-400 ml-8 relative z-10">Operações logísticas próprias e Fidelidade Master.</p>
                                 </label>
                             </div>
 
