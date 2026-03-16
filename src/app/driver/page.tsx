@@ -3,9 +3,8 @@
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Clock, MapPin, PhoneCall, Navigation, ArrowRight, User, Loader2, Store, Power, LogOut, X, Banknote, CheckCircle2, History, Printer } from "lucide-react";
-import { openWaybillWindow } from "@/lib/ReceiptWaybill";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { Clock, MapPin, PhoneCall, Navigation, ArrowRight, User, Loader2, Store, Power, LogOut, X, Banknote, CheckCircle2, History, ExternalLink, MessageSquare } from "lucide-react";
 
 function SwipeToConfirm({ onConfirm, isConfirming }: { onConfirm: () => void, isConfirming: boolean }) {
     const [dragX, setDragX] = useState(0);
@@ -102,6 +101,8 @@ export default function DriverDashboard() {
     const [confirmingId, setConfirmingId] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [driverCoords, setDriverCoords] = useState<{ lat: number; lng: number } | null>(null);
+    const [distanceInfo, setDistanceInfo] = useState<{ km: string; minutes: number } | null>(null);
 
     const deliveries = useMemo(() => {
         if (!isOnline) return [];
@@ -109,6 +110,54 @@ export default function DriverDashboard() {
             .filter((o: LiveOrder) => o.orderType === "delivery" && (o.status === "preparing" || o.status === "ready" || o.status === "delivering"))
             .reverse();
     }, [activeOrders, isOnline]);
+
+    // Get driver's GPS position
+    useEffect(() => {
+        if (!navigator.geolocation) return;
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => setDriverCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => {}, // silently fail
+            { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+        );
+        return () => navigator.geolocation.clearWatch(watchId);
+    }, []);
+
+    // Haversine distance calculator
+    const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // Geocode address & compute distance whenever active delivery changes
+    useEffect(() => {
+        const delivery = deliveries[0];
+        if (!delivery || delivery.status !== "delivering" || !delivery.deliveryAddress || !driverCoords) {
+            setDistanceInfo(null);
+            return;
+        }
+        const encoded = encodeURIComponent(delivery.deliveryAddress);
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+            .then(r => r.json())
+            .then(results => {
+                if (results && results[0]) {
+                    const destLat = parseFloat(results[0].lat);
+                    const destLng = parseFloat(results[0].lon);
+                    const km = haversineKm(driverCoords.lat, driverCoords.lng, destLat, destLng);
+                    const minutes = Math.round((km / 25) * 60); // ~25 km/h average city speed
+                    setDistanceInfo({ km: km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`, minutes });
+                }
+            })
+            .catch(() => setDistanceInfo(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deliveries[0]?.id, driverCoords]);
+
+    const openGoogleMaps = (address: string) => {
+        const encoded = encodeURIComponent(address);
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}&travelmode=driving`, '_blank');
+    };
 
     const todayMetrics = useMemo(() => {
         const today = new Date();
@@ -257,18 +306,32 @@ export default function DriverDashboard() {
                                     {activeDelivery.status === "preparing" ? "A Preparar" : activeDelivery.status === "ready" ? "Coleta Necessária" : "Entrega em Andamento"}
                                 </div>
                                 <h2 className="text-4xl font-black text-white tracking-tighter">
-                                    {activeDelivery.status === "preparing" || activeDelivery.status === "ready" ? "Balcão" : "7 min"}
+                                    {activeDelivery.status === "delivering"
+                                        ? (distanceInfo ? `${distanceInfo.minutes} min` : "...")
+                                        : "Balcão"}
                                 </h2>
                                 <p className="text-slate-300 font-medium text-lg mt-1">
-                                    {activeDelivery.status === "preparing" ? "Aguarde confeção" : activeDelivery.status === "ready" ? "Dirija-se ao restaurante" : "1.2 km de distância"}
+                                    {activeDelivery.status === "preparing"
+                                        ? "Aguarde confeção"
+                                        : activeDelivery.status === "ready"
+                                        ? "Dirija-se ao restaurante"
+                                        : distanceInfo ? `${distanceInfo.km} de distância` : "Calculando rota..."}
                                 </p>
                             </div>
-                            <div className={cn(
-                                "w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg",
-                                activeDelivery.status === "delivering" ? "bg-blue-600" : "bg-amber-500"
-                            )}>
-                                {activeDelivery.status === "delivering" ? <Navigation className="w-6 h-6 text-white mb-1" /> : <Store className="w-6 h-6 text-white mb-1" />}
-                            </div>
+                            {activeDelivery.status === "delivering" && activeDelivery.deliveryAddress ? (
+                                <button
+                                    onClick={() => openGoogleMaps(activeDelivery.deliveryAddress!)}
+                                    className="w-16 h-16 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-95 flex flex-col items-center justify-center shadow-lg shadow-blue-700/40 transition-all"
+                                    title="Abrir no Google Maps"
+                                >
+                                    <Navigation className="w-6 h-6 text-white mb-0.5" />
+                                    <span className="text-[9px] font-bold text-blue-100 uppercase tracking-wider">Maps</span>
+                                </button>
+                            ) : (
+                                <div className="w-16 h-16 rounded-2xl bg-amber-500 flex flex-col items-center justify-center shadow-lg">
+                                    <Store className="w-6 h-6 text-white mb-1" />
+                                </div>
+                            )}
                         </div>
 
                         {/* Customer Info Card Uber Style */}
@@ -296,24 +359,19 @@ export default function DriverDashboard() {
                                 </div>
 
                                 <div className="flex items-start gap-3 mt-4 pt-4 border-t border-slate-700">
-                                    <MapPin className="w-6 h-6 text-blue-400 shrink-0" />
-                                    <div>
+                                    <MapPin className="w-6 h-6 text-blue-400 shrink-0 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
                                         <p className="text-base font-medium text-slate-100 leading-snug">
                                             {activeDelivery.deliveryAddress}
                                         </p>
-                                        <p className="text-sm text-slate-400 mt-1">Tocar interfone e aguardar.</p>
-                                        <button 
-                                            onClick={() => openWaybillWindow({
-                                                order: activeDelivery, 
-                                                restaurantName: user?.restaurantData?.name || "Restaurante",
-                                                restaurantNif: user?.restaurantData?.nif || "000000000",
-                                                restaurantAddress: user?.restaurantData?.address || ""
-                                            })}
-                                            className="mt-3 flex items-center gap-2 text-xs font-bold text-blue-300 hover:text-blue-200 transition-colors uppercase tracking-wider"
-                                            title="Imprimir/Visualizar Guia de Transporte Legal"
-                                        >
-                                            <Printer className="w-4 h-4" /> Guia de Carga (DNRE)
-                                        </button>
+
+                                        {/* Dynamic delivery note from customer */}
+                                        {activeDelivery.deliveryNote ? (
+                                            <div className="mt-2 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                                                <MessageSquare className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                                                <p className="text-sm text-amber-200 font-medium leading-snug">{activeDelivery.deliveryNote}</p>
+                                            </div>
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>

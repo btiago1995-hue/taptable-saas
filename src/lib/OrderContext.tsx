@@ -34,6 +34,7 @@ export interface LiveOrder {
     customerNif?: string;
     deliveryAddress?: string;
     deliveryFee?: number;
+    deliveryNote?: string;
     orderNumber?: string;
     createdAt: string;
 }
@@ -53,7 +54,8 @@ interface OrderContextType {
         customerPhone?: string,
         customerNif?: string,
         deliveryAddress?: string,
-        deliveryFee?: number
+        deliveryFee?: number,
+        deliveryNote?: string
     ) => Promise<{ orderId: string; orderNumber: string } | void>;
     updateOrderStatus: (orderId: string, newStatus: OrderStatus) => void;
     updatePaymentStatus: (orderId: string, newStatus: PaymentStatus) => void;
@@ -216,6 +218,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             customerNif: dbOrder.customer_nif,
             deliveryAddress: dbOrder.delivery_address,
             deliveryFee: dbOrder.delivery_fee,
+            deliveryNote: dbOrder.delivery_note,
             orderNumber: dbOrder.order_number,
             createdAt: dbOrder.created_at
         };
@@ -234,7 +237,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         customerPhone?: string,
         customerNif?: string,
         deliveryAddress?: string,
-        deliveryFee?: number
+        deliveryFee?: number,
+        deliveryNote?: string
     ) => {
         // Fallback to targetRestaurantId or the resolved restaurantId context
         const finalRestId = targetRestaurantId || restaurantId;
@@ -259,6 +263,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             p_delivery_address: deliveryAddress || null,
             p_delivery_fee: deliveryFee || 0,
             p_order_number: orderNumber,
+            p_delivery_note: deliveryNote || null,
             p_items: items.map(i => ({ 
                 menu_item_id: i.id.includes('-') ? i.id : null, 
                 name: i.name, 
@@ -293,6 +298,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         if (customerPhone) newOrderData.customer_phone = customerPhone;
         if (customerNif) newOrderData.customer_nif = customerNif;
         if (deliveryAddress) newOrderData.delivery_address = deliveryAddress;
+        if (deliveryNote) newOrderData.delivery_note = deliveryNote;
         if (deliveryFee !== undefined && deliveryFee > 0) newOrderData.delivery_fee = deliveryFee;
 
         const { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert([newOrderData]).select('id').single();

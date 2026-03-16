@@ -25,6 +25,7 @@ export default function DeliveryCheckoutPage() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerNif, setCustomerNif] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [deliveryNote, setDeliveryNote] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | "cash" | "vinti4">("card");
 
 
@@ -98,7 +99,8 @@ export default function DeliveryCheckoutPage() {
             customerPhone,
             customerNif || undefined,
             deliveryAddress,
-            currentDeliveryFee
+            currentDeliveryFee,
+            deliveryNote || undefined
         );
         clearCart();
         
@@ -227,9 +229,18 @@ export default function DeliveryCheckoutPage() {
                             </div>
 
                             {orderMethod === "delivery" && (
-                                <div className="animate-in slide-in-from-top-2 fade-in duration-300">
-                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase mt-2">Endereço de Entrega Completo</label>
-                                    <textarea required rows={2} value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Rua, Número, Bairro, Complemento" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" />
+                                <div className="animate-in slide-in-from-top-2 fade-in duration-300 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase mt-2">Endereço de Entrega Completo</label>
+                                        <textarea required rows={2} value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Rua, Número, Bairro, Complemento" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase flex items-center justify-between">
+                                            <span>Nota para o Entregador</span>
+                                            <span className="text-[10px] font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-400">Opcional</span>
+                                        </label>
+                                        <textarea rows={2} value={deliveryNote} onChange={e => setDeliveryNote(e.target.value)} placeholder="Ex: Toque o interfone nº 3B, portão azul, 2º andar..." className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" />
+                                    </div>
                                 </div>
                             )}
                         </div>
