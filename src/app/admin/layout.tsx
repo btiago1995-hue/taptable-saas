@@ -157,21 +157,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     )}
                 </div>
 
-                {/* Collapse Toggle Button - Always Visible */}
-                <div className={cn(
-                    "px-4 py-2 border-b border-slate-50 flex",
-                    isSidebarCollapsed ? "justify-center" : "justify-end"
-                )}>
-                    <button 
-                        onClick={toggleSidebar}
-                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-                        title={isSidebarCollapsed ? "Expandir Menu" : "Recolher Menu"}
-                    >
-                        <PanelsTopLeft className="w-5 h-5" />
-                    </button>
-                </div>
+                {/* Collapse Toggle Button - Inside Sidebar when open */}
+                {!isSidebarCollapsed && (
+                    <div className="px-4 py-2 border-b border-slate-50 flex justify-end">
+                        <button 
+                            onClick={toggleSidebar}
+                            className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                            title="Fechar Menu"
+                        >
+                            <PanelsTopLeft className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
 
-                <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
+                <nav className={cn(
+                    "flex-1 p-4 flex flex-col gap-2 overflow-y-auto min-w-[256px] transition-opacity duration-300",
+                    isSidebarCollapsed ? "opacity-0 invisible" : "opacity-100"
+                )}>
                     {navLinks.map((link) => {
                         const Icon = link.icon;
                         const isActive = pathname === link.href;
@@ -194,25 +196,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </nav>
 
                 <div className={cn(
-                    "p-4 border-t border-slate-100 hidden md:block mt-auto transition-all",
-                    isSidebarCollapsed ? "px-2" : "p-4"
+                    "p-4 border-t border-slate-100 hidden md:block mt-auto transition-all min-w-[256px]",
+                    isSidebarCollapsed ? "opacity-0 invisible" : "opacity-100"
                 )}>
-                    {!isSidebarCollapsed && (
-                        <div className="mb-4 px-2 animate-in fade-in duration-300">
-                            <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                        </div>
-                    )}
+                    <div className="mb-4 px-2">
+                        <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                    </div>
                     <button 
                         onClick={handleLogout} 
-                        className={cn(
-                            "flex items-center gap-3 rounded-xl text-red-600 font-medium hover:bg-red-50 w-full transition-all",
-                            isSidebarCollapsed ? "justify-center py-4" : "px-4 py-3"
-                        )}
-                        title={isSidebarCollapsed ? "Sair" : ""}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 font-medium hover:bg-red-50 w-full transition-all"
                     >
                         <LogOut className="w-5 h-5" />
-                        {!isSidebarCollapsed && "Sair"}
+                        Sair
                     </button>
                 </div>
             </aside>
@@ -251,10 +247,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto relative">
+                {/* Reopen Sidebar Button - Visible only when collapsed */}
+                {isSidebarCollapsed && (
+                    <button 
+                        onClick={toggleSidebar}
+                        className="fixed top-4 left-4 z-[60] bg-white border border-slate-200 p-2.5 rounded-xl shadow-lg hover:bg-slate-50 text-slate-400 hover:text-primary-600 transition-all animate-in fade-in slide-in-from-left-4 duration-500"
+                        title="Abrir Menu"
+                    >
+                        <PanelsTopLeft className="w-6 h-6" />
+                    </button>
+                )}
+                
                 <div className={cn(
                     "p-6 md:p-8 mx-auto w-full transition-all duration-300",
-                    !isSidebarCollapsed && "max-w-7xl" // Slightly larger threshold if sidebar is open
+                    !isSidebarCollapsed && "max-w-7xl"
                 )}>
                     {children}
                 </div>
