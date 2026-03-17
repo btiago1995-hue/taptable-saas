@@ -156,7 +156,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
                                         status: payload.new.status,
                                         paymentStatus: payload.new.payment_status,
                                         paymentMethod: payload.new.payment_method,
-                                        tableNumber: payload.new.table_number,
+                                        tableNumber: payload.new.table_number ?? 0,
                                     };
                                 }
                                 return o;

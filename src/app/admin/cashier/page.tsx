@@ -139,12 +139,10 @@ export default function AdminCashierPage() {
 
         setIsClosing(true);
         try {
-            const pendingOrderIds = selectedTable.orders
-                .filter(o => o.paymentStatus === 'pending')
-                .map(o => o.id);
+            const allOrderIds = selectedTable.orders.map(o => o.id);
 
             // Close all orders at once (DB + UI)
-            await closeTableOrders(pendingOrderIds, paymentMethod);
+            await closeTableOrders(allOrderIds, paymentMethod);
 
             setSelectedTable(null);
             setPaymentMethod(null);
