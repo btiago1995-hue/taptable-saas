@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { DigitalMenu } from "@/components/client/DigitalMenu";
 import { Store, Loader2, Info, Receipt, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useCart } from "@/lib/CartContext";
+import { CartReview } from "@/components/client/CartReview";
 
 export default function TablePage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { cartTotal, cartItemCount } = useCart();
 
     const [restaurant, setRestaurant] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCartOpen, setIsCartOpen] = useState(false);
 
     useEffect(() => {
         // In a real app, restaurant_id and mesa_id come from params
@@ -35,6 +38,12 @@ export default function TablePage() {
 
         loadData();
     }, [params]);
+
+    useEffect(() => {
+        if (searchParams.get("cart") === "open") {
+            setIsCartOpen(true);
+        }
+    }, [searchParams]);
 
     if (isLoading) {
         return (
@@ -82,7 +91,7 @@ export default function TablePage() {
             {cartItemCount > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom-6">
                     <div className="max-w-md mx-auto relative cursor-pointer active:scale-[0.98] transition-transform"
-                        onClick={() => router.push(`/p/${restaurant.id}/mesa/${params.mesa_id || 1}/checkout`)}
+                        onClick={() => setIsCartOpen(true)}
                     >
                         {/* Notification Badge */}
                         <div className="absolute -top-3 -right-2 bg-rose-500 text-white w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold shadow-sm z-10 border-2 border-white">
@@ -99,6 +108,12 @@ export default function TablePage() {
                     </div>
                 </div>
             )}
+
+            <CartReview 
+                isOpen={isCartOpen} 
+                onClose={() => setIsCartOpen(false)} 
+                checkoutUrl={`/p/${restaurant.id}/mesa/${params.mesa_id || 1}/checkout`} 
+            />
         </div>
     );
 }

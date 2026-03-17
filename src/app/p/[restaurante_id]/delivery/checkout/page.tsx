@@ -161,7 +161,7 @@ export default function DeliveryCheckoutPage() {
         <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900 overflow-x-hidden">
             <header className="bg-white px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-10 w-full">
                 <div className="max-w-md mx-auto flex items-center gap-3">
-                    <button onClick={() => router.back()} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
+                    <button onClick={() => router.push(`/p/${restaurant.id}/delivery?cart=open`)} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                     <div>
@@ -178,7 +178,7 @@ export default function DeliveryCheckoutPage() {
                 {cartItems.length === 0 ? (
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center text-slate-500 mt-6">
                         <p>Seu carrinho está vazio.</p>
-                        <button onClick={() => router.back()} className="mt-4 text-primary-600 font-semibold hover:underline">Voltar ao Menu</button>
+                        <button onClick={() => router.push(`/p/${restaurant.id}/delivery`)} className="mt-4 text-primary-600 font-semibold hover:underline">Voltar ao Menu</button>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit}>
