@@ -99,7 +99,7 @@ export default function CheckoutPage() {
                 </div>
             )}
             {/* Header */}
-            <header className="bg-white px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-10">
+            <header className="bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-50 w-full">
                 <div className="max-w-md mx-auto flex items-center gap-3">
                     <button onClick={() => router.push(`/p/${restaurant.id}/mesa/${params.mesa_id || 1}?cart=open`)} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
                         <ArrowLeft className="w-6 h-6" />
@@ -144,6 +144,7 @@ export default function CheckoutPage() {
                             </label>
                             <input 
                                 type="text" 
+                                inputMode="numeric"
                                 maxLength={9} 
                                 value={customerNif} 
                                 onChange={e => setCustomerNif(e.target.value)} 

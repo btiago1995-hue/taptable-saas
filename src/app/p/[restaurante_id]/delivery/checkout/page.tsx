@@ -159,7 +159,7 @@ export default function DeliveryCheckoutPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900 overflow-x-hidden">
-            <header className="bg-white px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-10 w-full">
+            <header className="bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm border-b border-slate-100 sticky top-0 z-50 w-full animate-in fade-in duration-500">
                 <div className="max-w-md mx-auto flex items-center gap-3">
                     <button onClick={() => router.push(`/p/${restaurant.id}/delivery?cart=open`)} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors">
                         <ArrowLeft className="w-6 h-6" />
@@ -217,7 +217,7 @@ export default function DeliveryCheckoutPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">WhatsApp</label>
-                                <input required type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="(00) 00000-0000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                                <input required type="tel" inputMode="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="(00) 00000-0000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
                             </div>
 
                             <div>
@@ -225,7 +225,7 @@ export default function DeliveryCheckoutPage() {
                                     <span>NIF (Opcional)</span>
                                     <span className="text-[10px] font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-400">Para Fatura</span>
                                 </label>
-                                <input type="text" maxLength={9} value={customerNif} onChange={e => setCustomerNif(e.target.value)} placeholder="000 000 000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono tracking-widest" />
+                                <input type="text" inputMode="numeric" maxLength={9} value={customerNif} onChange={e => setCustomerNif(e.target.value)} placeholder="000 000 000" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono tracking-widest" />
                             </div>
 
                             {orderMethod === "delivery" && (

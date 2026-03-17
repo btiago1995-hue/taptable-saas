@@ -19,9 +19,12 @@ export function CartReview({ isOpen, onClose, checkoutUrl }: CartReviewProps) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] h-[85vh] sm:h-auto max-h-[90vh] flex flex-col shadow-2xl relative animate-in slide-in-from-bottom-8 duration-300">
+            <div className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2rem] h-[85vh] sm:h-auto max-h-[90vh] flex flex-col shadow-2xl relative animate-in slide-in-from-bottom-8 duration-300 pb-safe">
+                {/* Mobile Grabber */}
+                <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
+                
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 pt-2 sm:pt-6">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
                             <ShoppingBag className="w-5 h-5 text-indigo-600" />
