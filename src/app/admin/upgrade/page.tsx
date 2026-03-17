@@ -69,7 +69,7 @@ export default function UpgradePage() {
                 <p className="text-slate-500 mb-6">Para aceder a esta funcionalidade de imediato, o administrador do restaurante deverá solicitar Upgrade para o <strong>Plano {currentFeature.reqPlan}</strong>.</p>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
-                    <Link href="/admin/billing" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 w-full sm:w-auto hover:-translate-y-1">
+                    <Link href="/admin/settings?tab=Assinatura+SaaS" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 w-full sm:w-auto hover:-translate-y-1">
                         Ver Faturação e Planos <ArrowRight className="w-5 h-5" />
                     </Link>
                     <Link href="/admin/dashboard" className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all w-full sm:w-auto">

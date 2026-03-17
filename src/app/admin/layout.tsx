@@ -97,8 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
              links.push(
                 { name: "Clientes", href: "/admin/customers", icon: Users },
-                { name: "Configurações", href: "/admin/settings", icon: Settings },
-                { name: "Assinatura SaaS", href: "/admin/billing", icon: CreditCard }
+                { name: "Configurações", href: "/admin/settings", icon: Settings }
              );
         }
         

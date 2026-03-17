@@ -1,17 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer, CreditCard, CalendarClock, BadgeDollarSign } from "lucide-react";
 import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AdminSettings() {
+    return (
+        <Suspense fallback={<div className="p-8 text-slate-500">A carregar definições...</div>}>
+            <SettingsContent />
+        </Suspense>
+    );
+}
+
+function SettingsContent() {
     const { user } = useAuth();
-    const tabs = ["Geral", "Pagamentos & Gorjetas", "Links & QR Codes", "Avaliações & Google"];
+    const searchParams = useSearchParams();
+    const tabs = ["Geral", "Pagamentos & Gorjetas", "Links & QR Codes", "Avaliações & Google", "Assinatura SaaS"];
     const [activeTab, setActiveTab] = useState("Geral");
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam && tabs.includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [searchParams, tabs]);
 
     // Form States
     const [restaurantName, setRestaurantName] = useState("");
@@ -112,6 +130,47 @@ export default function AdminSettings() {
         } catch (err: any) {
             console.error("Error saving restaurant settings", err);
             alert("Erro ao gravar definições: " + (err.message || 'Falha na BD.'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // SaaS Billing Logic (Moved from billing page)
+    const handlePaySaaS = async () => {
+        setIsSaving(true);
+        try {
+            let amountDue = 4990;
+            if (user?.subscriptionPlan === 'essencial') amountDue = 1990;
+            else if (user?.subscriptionPlan === 'elite') amountDue = 9900;
+
+            const res = await fetch('/api/vinti4/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: `SAAS_${user?.restaurantId}_${Date.now()}`,
+                    amount: amountDue,
+                    restaurantId: user?.restaurantId,
+                    b2bSaaSPayment: true
+                })
+            });
+            
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Erro ao gerar fatura B2B Vinti4Net.");
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = data.actionUrl;
+            Object.keys(data.formData).forEach(key => {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = data.formData[key];
+                form.appendChild(hiddenField);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        } catch (err: any) {
+            alert(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade TapTable, configure as chaves mestras SISP no servidor.)");
         } finally {
             setIsSaving(false);
         }
@@ -412,6 +471,79 @@ export default function AdminSettings() {
                                     />
                                 </div>
                                 <p className="text-xs text-slate-500">Este link é mostrado aos clientes após finalizarem o pagamento na mesa. Encontre o link no seu Google Meu Negócio.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "Assinatura SaaS" && (
+                        <div className="space-y-6 animate-in fade-in">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="bg-slate-900 p-6 text-white">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Plano Atual</p>
+                                            <h3 className="text-2xl font-black capitalize">{user?.restaurantData?.subscriptionPlan || 'Growth'} (Mensal)</h3>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Valor Licença</p>
+                                            <div className="text-2xl font-black text-emerald-400">
+                                                {formatCurrency(user?.restaurantData?.subscriptionPlan === 'essencial' ? 1990 : user?.restaurantData?.subscriptionPlan === 'elite' ? 9900 : 4990)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-100 pb-6 mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                                                <CalendarClock className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase">Próximo Vencimento</p>
+                                                <p className="font-bold text-slate-800">15 de Abril de 2026</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={handlePaySaaS}
+                                            disabled={isSaving}
+                                            className="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-primary-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                                        >
+                                            <CreditCard className="w-4 h-4" /> Regularizar Vinti4
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <BadgeDollarSign className="w-4 h-4" /> Parceiro de Licenciamento
+                                        </h4>
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-slate-900 mb-1">TimeInvest, Sociedade Tecnológica</p>
+                                                <p className="text-xs text-slate-500 leading-relaxed">
+                                                    Entidade responsável pelo licenciamento do software TapTable. Para faturas específicas com NIF empresa, contacte o suporte.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <h4 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-4">Histórico Recente</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div>
+                                            <div className="font-bold text-slate-700">INV-2026-03</div>
+                                            <div className="text-slate-500 text-xs">15 Mar 2026</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-slate-900">Liquidado</div>
+                                            <div className="text-emerald-600 text-xs flex items-center gap-1 justify-end mt-0.5 font-bold">
+                                                <CheckCircle2 className="w-3 h-3" /> OK
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
