@@ -59,6 +59,7 @@ interface OrderContextType {
     ) => Promise<{ orderId: string; orderNumber: string } | void>;
     updateOrderStatus: (orderId: string, newStatus: OrderStatus) => void;
     updatePaymentStatus: (orderId: string, newStatus: PaymentStatus) => void;
+    closeTableOrders: (orderIds: string[], method: PaymentMethod) => Promise<void>;
     markItemDelivered: (orderId: string, itemId: string) => void;
 }
 
@@ -360,6 +361,32 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         await supabase.from('orders').update({ payment_status: newStatus }).eq('id', orderId);
     };
 
+    const closeTableOrders = async (orderIds: string[], method: PaymentMethod) => {
+        if (!restaurantId || orderIds.length === 0) return;
+
+        // Optimistic UI Update
+        setOrders(prev => prev.map(o => 
+            orderIds.includes(o.id) 
+                ? { ...o, paymentStatus: 'paid', status: 'delivered', paymentMethod: method } 
+                : o
+        ));
+
+        // DB Update
+        const { error } = await supabase
+            .from('orders')
+            .update({ 
+                payment_status: 'paid', 
+                status: 'delivered', 
+                payment_method: method 
+            })
+            .in('id', orderIds);
+
+        if (error) {
+            console.error("Error closing orders:", error);
+            throw error;
+        }
+    };
+
     const markItemDelivered = async (orderId: string, itemId: string) => {
         let shouldMarkOrderDelivered = false;
 
@@ -386,7 +413,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <OrderContext.Provider value={{ orders, placeOrder, updateOrderStatus, updatePaymentStatus, markItemDelivered }}>
+        <OrderContext.Provider value={{ orders, placeOrder, updateOrderStatus, updatePaymentStatus, closeTableOrders, markItemDelivered }}>
             {children}
         </OrderContext.Provider>
     );

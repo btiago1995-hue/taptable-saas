@@ -25,7 +25,7 @@ interface CreditNote {
 
 export default function AdminCashierPage() {
     const { user } = useAuth();
-    const { orders: activeOrders, updatePaymentStatus } = useOrders();
+    const { orders: activeOrders, closeTableOrders } = useOrders();
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTable, setSelectedTable] = useState<TableData | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "vinti4" | null>(null);
@@ -139,23 +139,19 @@ export default function AdminCashierPage() {
 
         setIsClosing(true);
         try {
-            // In a real app with a dedicated backend, this would be a single atomic transaction.
-            // Here, we update each pending order for this table sequentially.
-            const pendingOrders = selectedTable.orders.filter(o => o.paymentStatus === 'pending');
+            const pendingOrderIds = selectedTable.orders
+                .filter(o => o.paymentStatus === 'pending')
+                .map(o => o.id);
 
-            for (const order of pendingOrders) {
-                // We're tagging the method here in the UI only for now, 
-                // but we trigger the existing updatePaymentStatus context helper.
-                updatePaymentStatus(order.id, 'paid');
-            }
+            // Close all orders at once (DB + UI)
+            await closeTableOrders(pendingOrderIds, paymentMethod);
 
             setSelectedTable(null);
             setPaymentMethod(null);
             setShowCashConfirmation(false);
-            alert(`Mesa ${selectedTable.tableNumber} fechada com sucesso via ${paymentMethod === 'cash' ? 'Dinheiro' : 'Multibanco/Cartão'}.`);
         } catch (error) {
             console.error("Error closing table:", error);
-            alert("Erro ao fechar mesa.");
+            alert("Erro ao fechar mesa. Por favor, tente novamente.");
         } finally {
             setIsClosing(false);
         }
