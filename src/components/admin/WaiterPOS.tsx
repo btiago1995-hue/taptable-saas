@@ -92,7 +92,7 @@ export function WaiterPOS({ restaurantId }: WaiterPOSProps) {
         try {
             const status = 'preparing'; // Vai direto para a cozinha
             const payStatus = paymentOption === 'pending' ? 'pending' : 'paid';
-            const method = paymentOption === 'pending' ? 'in_store' : paymentOption; // pending isn't a method, but in_store handles it usually
+            const method = paymentOption === 'pending' ? 'cash' : paymentOption; // Use cash as a valid enum placeholder for pending orders
 
             await placeOrder(
                 restaurantId,
