@@ -32,7 +32,7 @@ export function WaiterPOS({ restaurantId }: WaiterPOSProps) {
                 try {
                     const [catsRes, itemsRes] = await Promise.all([
                         supabase.from('menu_categories').select('*').eq('restaurant_id', restaurantId).order('sort_order'),
-                        supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('status', 'available').order('sort_order')
+                        supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('status', 'available')
                     ]);
                     
                     if (catsRes.data) {
