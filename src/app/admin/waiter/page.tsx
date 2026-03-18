@@ -5,6 +5,7 @@ import { useOrders, LiveOrder, OrderStatus, PaymentStatus } from "@/lib/OrderCon
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
+import { WaiterPOS } from "@/components/admin/WaiterPOS";
 
 export default function WaiterDashboard() {
     const { orders: activeOrders, updateOrderStatus, updatePaymentStatus, markItemDelivered } = useOrders();
@@ -202,6 +203,11 @@ export default function WaiterDashboard() {
                         );
                     })}
                 </div>
+            )}
+
+            {/* Render the Mini-POS Widget */}
+            {user?.restaurantId && (
+                <WaiterPOS restaurantId={user.restaurantId} />
             )}
         </div>
     );
