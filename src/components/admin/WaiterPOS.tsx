@@ -31,8 +31,8 @@ export function WaiterPOS({ restaurantId }: WaiterPOSProps) {
                 setIsLoadingMenu(true);
                 try {
                     const [catsRes, itemsRes] = await Promise.all([
-                        supabase.from('categories').select('*').eq('restaurant_id', restaurantId).order('sort_order'),
-                        supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('is_available', true).order('sort_order')
+                        supabase.from('menu_categories').select('*').eq('restaurant_id', restaurantId).order('sort_order'),
+                        supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('status', 'available').order('sort_order')
                     ]);
                     
                     if (catsRes.data) {
