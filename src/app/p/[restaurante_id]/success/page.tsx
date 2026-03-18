@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Star, ExternalLink, Clock, Gift, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { OrderReceiptPDF } from "@/components/client/OrderReceiptPDF";
 
 export default function SuccessPage() {
     const router = useRouter();
@@ -16,6 +17,23 @@ export default function SuccessPage() {
     const [whatsapp, setWhatsapp] = useState("");
     const [isRegistering, setIsRegistering] = useState(false);
     const [claimed, setClaimed] = useState(false);
+    const [orderData, setOrderData] = useState<any>(null);
+
+    useEffect(() => {
+        if (txId) {
+            const fetchOrder = async () => {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select('*, order_items(*)')
+                    .eq('id', txId)
+                    .single();
+                if (!error && data) {
+                    setOrderData(data);
+                }
+            };
+            fetchOrder();
+        }
+    }, [txId]);
 
     const handleRegisterLoyalty = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -134,6 +152,22 @@ export default function SuccessPage() {
                     </div>
                 )}
             </div>
+
+            {/* Display Recibo Compartilhável Se Existir Dados do Pedido */}
+            {orderData && (
+                <div className="w-full max-w-sm mt-2">
+                    <OrderReceiptPDF 
+                        orderId={orderData.id}
+                        items={orderData.order_items || []}
+                        subtotal={orderData.subtotal}
+                        totalAmount={orderData.total_amount}
+                        tip={orderData.tip}
+                        deliveryFee={orderData.delivery_fee}
+                        restaurantName={"Restaurante Parceiro TapTable"} // Idealmente viria de um fetch do restaurant
+                        createdAt={orderData.created_at}
+                    />
+                </div>
+            )}
 
             <button
                 onClick={() => {

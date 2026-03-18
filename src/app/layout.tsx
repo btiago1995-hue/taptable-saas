@@ -19,6 +19,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TapTable - Smart Dining",
   description: "B2B Restaurant SaaS platform for seamless QR payments",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TapTable",
+  },
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
