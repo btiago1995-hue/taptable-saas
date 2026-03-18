@@ -311,7 +311,7 @@ export default function AdminCashierPage() {
                                 {selectedTable.orders.filter(o => o.paymentStatus === 'pending').length > 0 && (
                                     <div>
                                         <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                            <Banknote className="w-4 h-4" /> A Receber em Dinheiro
+                                            <AlertCircle className="w-4 h-4" /> Conta Pendente (A Receber)
                                         </h3>
                                         <div className="space-y-4">
                                             {selectedTable.orders.filter(o => o.paymentStatus === 'pending').map(order => (
