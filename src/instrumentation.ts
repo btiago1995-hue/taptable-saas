@@ -1,9 +1,9 @@
 export function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-      require('./sentry.server.config');
+      require('../sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-      require('./sentry.edge.config');
+      require('../sentry.edge.config');
   }
 }
