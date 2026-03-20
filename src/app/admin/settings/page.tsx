@@ -519,7 +519,7 @@ function SettingsContent() {
                                         </h4>
                                         <div className="flex items-start gap-4">
                                             <div className="flex-1">
-                                                <p className="text-sm font-bold text-slate-900 mb-1">TimeInvest, Sociedade Tecnológica</p>
+                                                <p className="text-sm font-bold text-slate-900 mb-1">Servyx</p>
                                                 <p className="text-xs text-slate-500 leading-relaxed">
                                                     Entidade responsável pelo licenciamento do software Dineo. Para faturas específicas com NIF empresa, contacte o suporte.
                                                 </p>
