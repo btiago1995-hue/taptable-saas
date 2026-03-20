@@ -410,7 +410,10 @@ export default function AdminMenuPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Foto do Prato <span className="text-slate-400 font-normal">(Recomendado)</span></label>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-0.5">Foto do Prato <span className="text-slate-400 font-normal">(Recomendado)</span></label>
+                                    <p className="text-[11px] text-slate-500 mb-2">Para melhor enquadramento no menu, use imagens Quadradas (1:1) com cerca de 400x400px.</p>
+                                </div>
                                 <div className="flex items-center gap-4">
                                     {formData.imageUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element
