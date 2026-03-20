@@ -147,8 +147,15 @@ export default function AdminMenuPage() {
     const handleSaveItem = async (e: React.FormEvent) => {
         e.preventDefault();
         const priceNum = parseFloat(formData.price.replace(",", "."));
-        if (!formData.name || isNaN(priceNum) || !user?.restaurantId) return;
+        if (!user?.restaurantId) {
+            alert("Sessão expirada. A sua ligação à base de dados caiu por inatividade. Por favor, recarregue a página (F5) para restabelecer a segurança e tente novamente.");
+            return;
+        }
 
+        if (!formData.name || isNaN(priceNum)) {
+            alert("Por favor, preencha o nome do prato e certifique-se que o preço contém apenas números.");
+            return;
+        }
         setIsUploading(true);
         let finalImageUrl = formData.imageUrl;
 
