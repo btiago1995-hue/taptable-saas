@@ -90,7 +90,7 @@ export default function CheckoutPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-40 md:pb-12 text-slate-900 relative">
+        <div className="min-h-screen bg-slate-50 font-sans pb-12 text-slate-900 relative">
             {isSubmitting && (
                 <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in duration-200">
                     <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />

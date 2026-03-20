@@ -46,7 +46,7 @@ export function PaymentGateway({ totalAmount, onSuccess }: PaymentGatewayProps) 
     };
 
     return (
-        <div className="bg-white rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] p-6 pb-8 fixed bottom-0 left-0 right-0 w-full md:max-w-md md:rounded-2xl md:static md:shadow-sm md:border md:border-slate-100 md:mb-6">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 w-full md:max-w-md mt-4 mb-8">
             <div className="flex justify-between items-center mb-6">
                 <span className="text-slate-600 font-medium">Total a Pagar</span>
                 <span className="text-3xl font-extrabold text-slate-900 text-center">
