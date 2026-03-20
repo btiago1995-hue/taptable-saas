@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ restauran
         .eq('id', restauranteId)
         .single();
 
-    const name = restaurant?.name || "TapTable Hub";
+    const name = restaurant?.name || "Dineo Hub";
 
     return {
         title: `${name} | Pedidos Online`,

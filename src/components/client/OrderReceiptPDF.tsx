@@ -66,7 +66,7 @@ export function OrderReceiptPDF({
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Recibo_TapTable_${orderId}.pdf`);
+            pdf.save(`Recibo_Dineo_${orderId}.pdf`);
 
         } catch (error) {
             console.error("Error generating PDF", error);
@@ -101,7 +101,7 @@ export function OrderReceiptPDF({
             >
                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 5px 0' }}>{restaurantName}</h2>
-                    <p style={{ fontSize: '10px', color: '#666', margin: 0 }}>Gerado por TapTable</p>
+                    <p style={{ fontSize: '10px', color: '#666', margin: 0 }}>Gerado por Dineo</p>
                     <p style={{ fontSize: '12px', margin: '10px 0' }}>Pedido #{orderId.substring(0, 8)}</p>
                     <p style={{ fontSize: '10px', margin: '0' }}>{new Date(createdAt).toLocaleString('pt-PT')}</p>
                 </div>

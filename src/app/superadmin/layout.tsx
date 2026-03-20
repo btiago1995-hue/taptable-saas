@@ -46,7 +46,7 @@ export default function SuperAdminLayout({
         <div className="h-16 flex items-center px-6 border-b border-slate-800">
           <div className="flex items-center gap-2 text-white font-bold text-lg">
             <Crown className="w-6 h-6 text-amber-500" />
-            TapTable SaaS Master
+            Dineo Master
           </div>
         </div>
 

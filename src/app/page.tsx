@@ -12,7 +12,7 @@ export default function Home() {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
               <Store className="w-6 h-6" />
             </div>
-            <span className="font-extrabold text-2xl tracking-tight text-slate-900">TableTap</span>
+            <span className="font-extrabold text-2xl tracking-tight text-slate-900">Dineo</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
             <a href="#features" className="hover:text-indigo-600 transition-colors">Funcionalidades</a>
@@ -204,9 +204,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <Store className="w-5 h-5 text-indigo-600" />
-            <span className="font-extrabold text-xl text-slate-900 tracking-tight">TableTap</span>
+            <span className="font-extrabold text-xl text-slate-900 tracking-tight">Dineo</span>
           </div>
-          <p className="text-slate-500 font-medium">© 2026 TableTap SaaS. Todos os direitos reservados.</p>
+          <p className="text-slate-500 font-medium text-center md:text-left">© 2026 Servyx. Provedor de valor agregado. Todos os direitos reservados. (Dineo SaaS)</p>
         </div>
       </footer>
     </div>

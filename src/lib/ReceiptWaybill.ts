@@ -111,7 +111,7 @@ export function openWaybillWindow(props: ReceiptWaybillProps) {
 
             <div class="text-center" style="margin-top: 15px; font-size: 10px;">
                 <p>Processado por programa certificado.</p>
-                <p>TapTable SaaS Fiscal</p>
+                <p>Dineo SaaS Fiscal</p>
                 <div style="margin-top: 10px;">
                     Assinatura / Visto Motorista:
                     <br><br>

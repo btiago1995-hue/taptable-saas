@@ -41,7 +41,7 @@ function SettingsContent() {
     const [vinti4PosId, setVinti4PosId] = useState("");
     const [vinti4PosAutCode, setVinti4PosAutCode] = useState("");
     const [activeTables, setActiveTables] = useState("45");
-    const [googleLink, setGoogleLink] = useState("https://g.page/r/taptable/review");
+    const [googleLink, setGoogleLink] = useState("https://g.page/r/dineo/review");
     const [qrCodes, setQrCodes] = useState<{ table: number, url: string, link: string }[]>([]);
     const [deliveryQr, setDeliveryQr] = useState<{url: string, link: string} | null>(null);
 
@@ -171,7 +171,7 @@ function SettingsContent() {
             document.body.appendChild(form);
             form.submit();
         } catch (err: any) {
-            alert(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade TapTable, configure as chaves mestras SISP no servidor.)");
+            alert(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade Dineo, configure as chaves mestras SISP no servidor.)");
         } finally {
             setIsSaving(false);
         }
@@ -432,7 +432,7 @@ function SettingsContent() {
                                                 className="bg-white p-3 md:p-4 rounded-xl shadow-sm flex flex-col items-center justify-center border border-slate-100 transition-all hover:border-primary-300 hover:shadow-md print:border-2 print:border-slate-300 print:shadow-none print:m-2 print:break-inside-avoid"
                                             >
                                                 <div className="bg-slate-900 text-white w-full text-center py-1 rounded-t-md text-[10px] font-black uppercase tracking-widest print:py-1">
-                                                    TapTable
+                                                    Dineo
                                                 </div>
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img src={qr.url} alt={`QR Mesa ${qr.table}`} className="w-20 h-20 md:w-28 md:h-28 mt-2 object-contain" />
@@ -521,7 +521,7 @@ function SettingsContent() {
                                             <div className="flex-1">
                                                 <p className="text-sm font-bold text-slate-900 mb-1">TimeInvest, Sociedade Tecnológica</p>
                                                 <p className="text-xs text-slate-500 leading-relaxed">
-                                                    Entidade responsável pelo licenciamento do software TapTable. Para faturas específicas com NIF empresa, contacte o suporte.
+                                                    Entidade responsável pelo licenciamento do software Dineo. Para faturas específicas com NIF empresa, contacte o suporte.
                                                 </p>
                                             </div>
                                         </div>

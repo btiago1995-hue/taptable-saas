@@ -80,7 +80,7 @@ export default function RestaurantLandingPage() {
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Serviço Temporariamente Indisponível</h1>
                 <p className="text-lg text-slate-500 max-w-md mx-auto mb-8 font-medium">O acesso a este cardápio digital está suspenso no momento. Por favor, contate o estabelecimento diretamente.</p>
                 <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                    Powered by TapTable SaaS
+                    Powered by Dineo SaaS
                 </div>
             </div>
         );

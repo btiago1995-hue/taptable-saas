@@ -163,7 +163,7 @@ export default function SuccessPage() {
                         totalAmount={orderData.total_amount}
                         tip={orderData.tip}
                         deliveryFee={orderData.delivery_fee}
-                        restaurantName={"Restaurante Parceiro TapTable"} // Idealmente viria de um fetch do restaurant
+                        restaurantName={"Restaurante Parceiro Dineo"} // Idealmente viria de um fetch do restaurant
                         createdAt={orderData.created_at}
                     />
                 </div>

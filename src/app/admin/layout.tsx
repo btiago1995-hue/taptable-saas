@@ -120,12 +120,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <ShieldAlert className="w-12 h-12 text-red-500" />
                 </div>
                 <h1 className="text-3xl font-black text-white tracking-tight mb-3">Assinatura Suspensa</h1>
-                <p className="text-lg text-slate-400 max-w-md mx-auto mb-8 font-medium">O acesso administrativo e operacional do seu restaurante foi temporariamente bloqueado por pendências na assinatura do TapTable.</p>
+                <p className="text-lg text-slate-400 max-w-md mx-auto mb-8 font-medium">O acesso administrativo e operacional do seu restaurante foi temporariamente bloqueado por pendências na assinatura do Dineo.</p>
                 <div className="flex gap-4">
                     <button onClick={handleLogout} className="px-6 py-3 rounded-xl font-bold bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/10">
                         Sair da Conta
                     </button>
-                    <a href="mailto:suporte@taptable.app" className="px-6 py-3 rounded-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center">
+                    <a href="mailto:suporte@dineo.vc" className="px-6 py-3 rounded-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center">
                         Contatar Suporte
                     </a>
                 </div>

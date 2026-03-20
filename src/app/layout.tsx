@@ -17,13 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TapTable - Smart Dining",
-  description: "B2B Restaurant SaaS platform for seamless QR payments",
+  title: "Dineo | Servyx",
+  description: "B2B Restaurant SaaS platform by Servyx",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TapTable",
+    title: "Dineo",
   },
   themeColor: "#0f172a",
 };

@@ -20,7 +20,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         try {
-            const stored = localStorage.getItem("taptable_cart");
+            const stored = localStorage.getItem("dineo_cart");
             if (stored) {
                 setCartItems(JSON.parse(stored));
             }
@@ -32,7 +32,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (isLoaded) {
-            localStorage.setItem("taptable_cart", JSON.stringify(cartItems));
+            localStorage.setItem("dineo_cart", JSON.stringify(cartItems));
         }
     }, [cartItems, isLoaded]);
 

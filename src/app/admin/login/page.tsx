@@ -49,7 +49,7 @@ export default function AdminLogin() {
                     <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-primary-500/30">
                         <Store className="w-8 h-8" />
                     </div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">TapTable Area</h1>
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Dineo Area</h1>
                     <p className="text-slate-500 mt-2 text-center text-sm">
                         O sistema operacional do seu restaurante.
                     </p>

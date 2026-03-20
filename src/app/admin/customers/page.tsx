@@ -114,7 +114,7 @@ export default function AdminCustomers() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `crm_taptable_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `crm_dineo_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

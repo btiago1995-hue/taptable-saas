@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 
 export const metadata = {
-  title: "Comece com o TapTable",
+  title: "Comece com o Dineo",
   description: "Crie a sua conta de restaurante em segundos.",
 };
 
@@ -15,7 +15,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
           <div className="w-8 h-8 md:w-10 md:h-10 bg-indigo-600 rounded-lg md:rounded-xl flex items-center justify-center text-white shadow-md group-hover:bg-indigo-700 transition-colors">
             <Store className="w-5 h-5" />
           </div>
-          <span className="font-extrabold text-xl md:text-2xl tracking-tight text-slate-900">TableTap</span>
+          <span className="font-extrabold text-xl md:text-2xl tracking-tight text-slate-900">Dineo</span>
         </Link>
         <Link 
           href="/admin/login" 

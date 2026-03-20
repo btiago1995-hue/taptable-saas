@@ -80,7 +80,7 @@ export default function SuperAdminDashboard() {
   const totalVolume = restaurants.reduce((sum, r) => sum + (r.total_orders || 0), 0);
 
   const toggleRestaurantAccess = async (id: string, currentStatus: boolean) => {
-    if (!confirm(`Tem certeza que deseja ${currentStatus ? 'BLOQUEAR' : 'DESBLOQUEAR'} o acesso deste restaurante ao TapTable?`)) return;
+    if (!confirm(`Tem certeza que deseja ${currentStatus ? 'BLOQUEAR' : 'DESBLOQUEAR'} o acesso deste restaurante ao Dineo?`)) return;
 
     try {
       setIsToggling(id);
@@ -122,7 +122,7 @@ export default function SuperAdminDashboard() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin mb-4 text-amber-500" />
-        <p>Carregando ecossistema TapTable...</p>
+        <p>Carregando ecossistema Dineo...</p>
       </div>
     );
   }

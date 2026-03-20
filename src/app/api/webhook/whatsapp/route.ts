@@ -61,7 +61,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: 'No customer phone attached to order, skipping.' }, { status: 200 });
         }
 
-        const restaurantName = order.restaurants?.name || "TapTable Parceiro";
+        const restaurantName = order.restaurants?.name || "Dineo Parceiro";
         const shortOrderId = order.id.substring(0, 8).toUpperCase();
         let messageText = "";
 

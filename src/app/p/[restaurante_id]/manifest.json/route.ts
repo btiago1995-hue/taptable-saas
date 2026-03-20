@@ -20,7 +20,7 @@ export async function GET(
     .eq("id", restauranteId)
     .single();
 
-  const name = restaurant?.name || "TapTable Hub";
+  const name = restaurant?.name || "Dineo Hub";
   const shortName = name.length > 12 ? name.substring(0, 12) : name;
 
   const manifest = {
