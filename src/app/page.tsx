@@ -206,7 +206,13 @@ export default function Home() {
             <Store className="w-5 h-5 text-indigo-600" />
             <span className="font-extrabold text-xl text-slate-900 tracking-tight">Dineo</span>
           </div>
-          <p className="text-slate-500 font-medium text-center md:text-left">© 2026 Servyx. Provedor de valor agregado. Todos os direitos reservados. (Dineo SaaS)</p>
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mt-4 md:mt-0">
+            <p className="text-slate-500 font-medium text-center md:text-left text-sm">© 2026 Servyx. Provedor de valor agregado. Todos os direitos reservados. (Dineo SaaS)</p>
+            <div className="flex gap-4 text-xs font-semibold text-slate-400">
+              <a href="/termos" className="hover:text-indigo-600 transition-colors">Termos</a>
+              <a href="/privacidade" className="hover:text-indigo-600 transition-colors">Privacidade</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

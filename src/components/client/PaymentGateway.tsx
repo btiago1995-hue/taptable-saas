@@ -128,6 +128,9 @@ export function PaymentGateway({ totalAmount, onSuccess }: PaymentGatewayProps) 
                     method === "cash" ? "Confirmar Pedido (Dinheiro)" : `Pagar ${formatCurrency(totalAmount)}`
                 )}
             </button>
+            <p className="text-[10px] text-slate-400 text-center mt-3 px-4">
+                Ao finalizar o pedido declaras ter lido e aceite os <a href="/termos" target="_blank" className="underline hover:text-slate-600 leading-relaxed">Termos e Condições (SISP/DNRE)</a> e a <a href="/privacidade" target="_blank" className="underline hover:text-slate-600">Política de Privacidade</a> da Dineo.
+            </p>
         </div>
     );
 }
