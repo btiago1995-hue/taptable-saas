@@ -160,21 +160,22 @@ export default function AdminMenuPage() {
         let finalImageUrl = formData.imageUrl;
 
         try {
-            // If the user selected a new file, upload it to Supabase Storage
+            // Se houver uma foto nova, aplicamos um timeout rigoroso (20 segundos) para prevenir bloqueios de UI (Redes fracas)
             if (imageFile) {
                 const fileExt = imageFile.name.split('.').pop();
                 const fileName = `${user.restaurantId}/${crypto.randomUUID()}.${fileExt}`;
 
-                const { error: uploadError } = await supabase.storage
-                    .from('menu-images')
-                    .upload(fileName, imageFile);
+                // Promise race to force timeout if network drops silently
+                const uploadPromise = supabase.storage.from('menu-images').upload(fileName, imageFile, { upsert: false });
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("A ligação de internet está demasiado lenta ou caiu. O envio falhou por tempo limite.")), 20000)
+                );
+
+                const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any;
 
                 if (uploadError) throw uploadError;
 
-                const { data: publicUrlData } = supabase.storage
-                    .from('menu-images')
-                    .getPublicUrl(fileName);
-
+                const { data: publicUrlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
                 finalImageUrl = publicUrlData.publicUrl;
             }
 
@@ -194,9 +195,9 @@ export default function AdminMenuPage() {
             }
             setHasUnsavedChanges(true);
             setIsItemModalOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error uploading image:", error);
-            alert("Erro ao enviar a imagem. Tente novamente.");
+            alert(error.message || "Erro ao conectar à cloud. Verifique a sua internet e tente novamente.");
         } finally {
             setIsUploading(false);
         }
