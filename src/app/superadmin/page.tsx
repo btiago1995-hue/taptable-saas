@@ -120,178 +120,174 @@ export default function SuperAdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-slate-400 min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin mb-4 text-amber-500" />
-        <p>Carregando ecossistema Dineo...</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-500 min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-slate-900" />
+        <p className="font-medium">Carregando ecossistema Dineo...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-900 text-slate-200">
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
       
       {/* Header */}
-      <header className="h-16 border-b border-white/10 flex items-center px-8 shrink-0 bg-slate-900/50 backdrop-blur-sm relative z-10 w-full">
-         <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-amber-500" /> Visão de Águia
+      <header className="h-16 border-b border-slate-200 flex items-center px-8 shrink-0 bg-white sticky top-0 z-10 w-full shadow-sm">
+         <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            Superadmin
          </h1>
       </header>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-8 w-full">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="flex-1 overflow-y-auto p-6 md:p-10 w-full">
+        <div className="max-w-7xl mx-auto space-y-10">
             
+            {/* Header Title for Content */}
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-2">Visão de Águia</h2>
+              <p className="text-slate-500 font-medium text-lg">Métricas e gestão do ecossistema de retalho e restauração.</p>
+            </div>
+
             {/* Health Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
-                {/* Ativas */}
-                <div className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                {/* Lojas Ativas */}
+                <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-8 relative overflow-hidden group hover:border-slate-300 transition-colors">
                     <div className="flex items-start justify-between relative z-10">
                         <div>
-                            <p className="text-slate-400 font-medium text-sm mb-1 uppercase tracking-wider">Lojas Ativas</p>
-                            <h3 className="text-4xl font-black text-white">
-                                {activeCount} <span className="text-slate-600 text-2xl font-medium">/ {restaurants.length}</span>
+                            <p className="text-slate-400 font-bold text-[10px] sm:text-xs mb-3 uppercase tracking-widest">Lojas Ativas</p>
+                            <h3 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-none">
+                                {activeCount} <span className="text-slate-400 text-2xl font-bold">/ {restaurants.length}</span>
                             </h3>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                            <Store className="w-6 h-6" />
                         </div>
                     </div>
                 </div>
 
                 {/* MRR */}
-                <div className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-8 relative overflow-hidden group hover:border-slate-300 transition-colors">
                     <div className="flex items-start justify-between relative z-10">
                         <div>
-                            <p className="text-slate-400 font-medium text-sm mb-1 uppercase tracking-wider">MRR (SaaS)</p>
-                            <h3 className="text-3xl font-black text-white">{formatCurrency(estimatedMRR)}</h3>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                            <BadgeDollarSign className="w-6 h-6" />
+                            <p className="text-slate-400 font-bold text-[10px] sm:text-xs mb-3 uppercase tracking-widest">Receita Recorrente</p>
+                            <h3 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-none">
+                              {formatCurrency(estimatedMRR).replace(',00', '')}
+                            </h3>
                         </div>
                     </div>
                 </div>
 
                 {/* GMV Global */}
-                <div className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-8 relative overflow-hidden group hover:border-slate-300 transition-colors">
                     <div className="flex items-start justify-between relative z-10">
                         <div>
-                            <p className="text-slate-400 font-medium text-sm mb-1 uppercase tracking-wider">GMV Transacionado</p>
-                            <h3 className="text-3xl font-black text-white">{formatCurrency(totalGMV)}</h3>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                            <TrendingUp className="w-6 h-6" />
+                            <p className="text-slate-400 font-bold text-[10px] sm:text-xs mb-3 uppercase tracking-widest">GMV Total</p>
+                            <h3 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-none">
+                              {formatCurrency(totalGMV).replace(',00', '')}
+                            </h3>
                         </div>
                     </div>
                 </div>
 
                 {/* Total Orders */}
-                <div className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-8 relative overflow-hidden group hover:border-slate-300 transition-colors">
                     <div className="flex items-start justify-between relative z-10">
                         <div>
-                            <p className="text-slate-400 font-medium text-sm mb-1 uppercase tracking-wider">Volume de Pedidos</p>
-                            <h3 className="text-4xl font-black text-white">{totalVolume}</h3>
-                        </div>
-                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                            <ShoppingBag className="w-6 h-6" />
+                            <p className="text-slate-400 font-bold text-[10px] sm:text-xs mb-3 uppercase tracking-widest">Volume (Pedidos)</p>
+                            <h3 className="text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-none">
+                              {totalVolume}
+                            </h3>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Tenant Table */}
-            <div className="bg-slate-800/30 border border-white/5 rounded-2xl overflow-hidden">
-                <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-white">Ecossistema de Restaurantes</h2>
+            <div className="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden">
+                <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+                    <h2 className="text-xl font-black tracking-tight text-slate-900">Ecossistema de Lojas</h2>
                 </div>
                 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-800/50 border-b border-white/5 text-slate-400 text-sm">
-                                <th className="px-6 py-4 font-semibold">Restaurante / URL</th>
-                                <th className="px-6 py-4 font-semibold">Data de Adesão</th>
-                                <th className="px-6 py-4 font-semibold text-center">Pedidos</th>
-                                <th className="px-6 py-4 font-semibold text-right">GMV (Faturamento da Loja)</th>
-                                <th className="px-6 py-4 font-semibold">Plano SaaS</th>
-                                <th className="px-6 py-4 font-semibold">Status</th>
-                                <th className="px-6 py-4 font-semibold text-right">Ação Administrativa</th>
+                            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                                <th className="px-8 py-4">Restaurante</th>
+                                <th className="px-8 py-4">Criado em</th>
+                                <th className="px-8 py-4 text-center">Pedidos</th>
+                                <th className="px-8 py-4 text-right">GMV Loja</th>
+                                <th className="px-8 py-4">Plano SaaS</th>
+                                <th className="px-8 py-4">Acesso</th>
+                                <th className="px-8 py-4 text-right">Ação</th>
                             </tr>
                         </thead>
                         <tbody>
                             {restaurants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                                    <td colSpan={7} className="px-8 py-16 text-center text-slate-500 font-medium">
                                         Nenhum restaurante cadastrado no momento.
                                     </td>
                                 </tr>
                             ) : (
                                 restaurants.map((restaurant, idx) => (
-                                    <tr key={restaurant.id} className="border-b border-white/5 hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-white flex items-center gap-2">
-                                                {idx === 0 && restaurant.gmv! > 0 && <span className="text-xl">🏆</span>}
+                                    <tr key={restaurant.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-8 py-5">
+                                            <div className="font-bold text-slate-900 flex items-center gap-2 text-sm">
+                                                {idx === 0 && restaurant.gmv! > 0 && <span className="text-lg leading-none">🏆</span>}
                                                 {restaurant.name}
                                             </div>
-                                            <a href={`/p/${restaurant.slug}`} target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 font-mono text-xs mt-1 block transition-colors">
+                                            <a href={`/p/${restaurant.slug}`} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-indigo-600 font-medium text-xs mt-1 block transition-colors">
                                                 /{restaurant.slug}
                                             </a>
                                         </td>
-                                        <td className="px-6 py-4 text-sm font-medium text-slate-400">
+                                        <td className="px-8 py-5 text-sm font-medium text-slate-600">
                                             {new Date(restaurant.created_at).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center justify-center bg-slate-800 text-slate-300 font-bold px-3 py-1 rounded-lg text-sm">
+                                        <td className="px-8 py-5 text-center">
+                                            <span className="inline-flex items-center justify-center bg-slate-100 text-slate-700 font-bold px-3 py-1 rounded-md text-sm border border-slate-200">
                                                 {restaurant.total_orders || 0}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-black text-emerald-400">
+                                        <td className="px-8 py-5 text-right font-black text-slate-900">
                                             {formatCurrency(restaurant.gmv || 0)}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-8 py-5">
                                             <select
                                                 disabled={isToggling === restaurant.id}
                                                 value={restaurant.subscription_plan || 'growth'}
                                                 onChange={(e) => changeSubscriptionPlan(restaurant.id, e.target.value)}
-                                                className="bg-slate-900 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 outline-none"
+                                                className="bg-white border border-slate-200 text-slate-700 font-medium text-sm rounded-xl focus:ring-slate-900 focus:border-slate-900 block w-full p-2.5 outline-none shadow-sm"
                                             >
                                                 <option value="essencial">Essencial (1.990 CVE)</option>
                                                 <option value="growth">Growth (4.990 CVE)</option>
                                                 <option value="elite">Elite (9.900 CVE)</option>
                                             </select>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-8 py-5">
                                             {restaurant.is_active ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                    <ShieldCheck className="w-3.5 h-3.5" /> Ativo
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                                    Ativo
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                                                    <ShieldAlert className="w-3.5 h-3.5" /> Inadimplente
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
+                                                    Bloqueado
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-8 py-5 text-right">
                                             <button 
                                                 disabled={isToggling === restaurant.id}
                                                 onClick={() => toggleRestaurantAccess(restaurant.id, restaurant.is_active)}
                                                 className={cn(
-                                                    "px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center min-w-[140px] ml-auto",
+                                                    "px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-50 flex items-center justify-center min-w-[150px] ml-auto border",
                                                     restaurant.is_active 
-                                                        ? "text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20" 
-                                                        : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+                                                        ? "bg-white text-rose-600 border-slate-200 hover:border-rose-200 hover:bg-rose-50" 
+                                                        : "bg-slate-900 text-white border-transparent hover:bg-slate-800"
                                                 )}
                                             >
                                                 {isToggling === restaurant.id ? (
                                                     <Loader2 className="w-4 h-4 animate-spin" />
                                                 ) : restaurant.is_active ? (
-                                                    "Suspender Acesso"
+                                                    "Suspender Loja"
                                                 ) : (
-                                                    "Restaurar Acesso"
+                                                    "Restaurar Loja"
                                                 )}
                                             </button>
                                         </td>
