@@ -6,6 +6,7 @@ import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, C
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -135,6 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <div className="bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 pb-20 md:pb-0 min-h-[100dvh]">
+            <OfflineBanner />
 
             {/* Sidebar for Desktop */}
             <aside className={cn(

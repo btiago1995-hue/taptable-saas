@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { openWaybillWindow } from "@/lib/ReceiptWaybill";
+import { triggerOrderNotification } from "@/lib/notifications";
 
 export default function KitchenDashboard() {
     const { orders: activeOrders, updateOrderStatus, placeOrder } = useOrders();
@@ -49,8 +50,16 @@ export default function KitchenDashboard() {
     }, [columns.new.length, isMuted]);
 
     const handleAction = (orderId: string, currentStatus: string) => {
-        if (currentStatus === "new") updateOrderStatus(orderId, "preparing");
-        if (currentStatus === "preparing") updateOrderStatus(orderId, "ready");
+        if (currentStatus === "new") {
+            updateOrderStatus(orderId, "preparing");
+            // Notify client that their order is being prepared
+            triggerOrderNotification(orderId, "preparing");
+        }
+        if (currentStatus === "preparing") {
+            updateOrderStatus(orderId, "ready");
+            // Notify client that their order is ready
+            triggerOrderNotification(orderId, "ready");
+        }
     };
 
 
