@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { DigitalMenu } from "@/components/client/DigitalMenu";
 import { Store, Loader2, Info, ShoppingCart, Truck } from "lucide-react";
@@ -12,6 +12,7 @@ import { CartReview } from "@/components/client/CartReview";
 export default function DeliveryMenuPage() {
     const params = useParams();
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const { cartTotal, cartItemCount } = useCart();
 
@@ -42,6 +43,13 @@ export default function DeliveryMenuPage() {
             setIsCartOpen(true);
         }
     }, [searchParams]);
+
+    const handleCloseCart = () => {
+        setIsCartOpen(false);
+        if (searchParams.has("cart")) {
+            router.replace(pathname, { scroll: false });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -108,7 +116,7 @@ export default function DeliveryMenuPage() {
 
             <CartReview 
                 isOpen={isCartOpen} 
-                onClose={() => setIsCartOpen(false)} 
+                onClose={handleCloseCart} 
                 checkoutUrl={`/p/${restaurant.id}/delivery/checkout`} 
             />
         </div>
