@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * POST /api/orders/sync
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     // Check if order already exists (idempotency — avoid duplicates if sync runs twice)
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("orders")
       .select("id")
       .eq("id", order.id)
@@ -25,8 +25,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Order already synced", id: order.id }, { status: 200 });
     }
 
-    // Insert the offline order into Supabase
-    const { error } = await supabase.from("orders").insert({
+    const { error } = await supabaseAdmin.from("orders").insert({
       id: order.id,
       restaurant_id: order.restaurantId,
       table_number: order.tableNumber || null,
