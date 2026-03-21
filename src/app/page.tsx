@@ -73,11 +73,8 @@ export default function Home() {
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-sm z-50 border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            </div>
-            <span className="font-black text-xl tracking-tight">Dineo</span>
-            <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
+            <span className="font-black text-2xl tracking-tight">Dineo</span>
+            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500">
@@ -238,7 +235,6 @@ export default function Home() {
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
         <section className="py-24 md:py-32 px-6 bg-slate-950 text-white">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-6">Junte-se a centenas de restaurantes em Cabo Verde</p>
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] mb-8">
               Pronto para levar o seu<br />restaurante para o próximo nível?
             </h2>
