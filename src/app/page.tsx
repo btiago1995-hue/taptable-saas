@@ -137,46 +137,43 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── FEATURES: alternating blocks (Sunday/Deliveroo style) ─────────── */}
-        <section id="features">
-          {features.map((f, i) => (
-            <div
-              key={i}
-              className={`py-20 md:py-28 px-6 ${f.dark ? "bg-slate-950 text-white" : "bg-white text-slate-900"}`}
-            >
-              <div className={`max-w-6xl mx-auto grid md:grid-cols-2 gap-12 md:gap-20 items-center ${i % 2 === 1 ? "md:grid-flow-col" : ""}`}>
-                {/* Text side */}
-                <div className={i % 2 === 1 ? "md:order-2" : ""}>
-                  <p className={`text-xs font-black uppercase tracking-[0.2em] mb-4 ${f.dark ? "text-slate-500" : "text-slate-400"}`}>
+        {/* ── FEATURES: text-only horizontal carousel ─────────────── */}
+        <section id="features" className="py-20 md:py-28 bg-white overflow-hidden border-b border-slate-100">
+          <div className="max-w-6xl mx-auto px-6 mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-slate-900">
+              Tudo o que precisa.
+            </h2>
+            <p className="text-slate-500 font-medium mt-4 text-lg">
+              Deslize para ver as funcionalidades.
+            </p>
+          </div>
+          
+          {/* Horizontal scroll container */}
+          <div className="flex overflow-x-auto snap-x snap-mandatory pb-12 px-6 max-w-6xl mx-auto gap-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {features.map((f, i) => (
+              <div 
+                key={i} 
+                className="snap-start shrink-0 w-[85vw] sm:w-[400px] bg-slate-50 border border-slate-100 rounded-[2rem] p-8 md:p-10 flex flex-col justify-between hover:border-slate-300 transition-colors"
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-slate-400">
                     {String(i + 1).padStart(2, "0")} — {f.label}
                   </p>
-                  <h2 className={`text-3xl md:text-4xl lg:text-5xl font-black leading-[1.1] tracking-tight mb-6 ${f.dark ? "text-white" : "text-slate-900"}`}>
+                  <h3 className="text-2xl md:text-3xl font-black leading-[1.15] tracking-tight mb-4 text-slate-900">
                     {f.headline}
-                  </h2>
-                  <p className={`text-base md:text-lg leading-relaxed ${f.dark ? "text-slate-400" : "text-slate-500"} max-w-md`}>
+                  </h3>
+                  <p className="text-base leading-relaxed text-slate-500">
                     {f.body}
                   </p>
                 </div>
-
-                {/* Visual side — clean aside block (no image, editorial style) */}
-                <div className={i % 2 === 1 ? "md:order-1" : ""}>
-                  <div className={`rounded-3xl p-10 md:p-14 flex items-center justify-center min-h-[280px] ${
-                    f.dark
-                      ? "bg-white/5 border border-white/10"
-                      : "bg-slate-50 border border-slate-100"
-                  }`}>
-                    <p className={`text-center text-base font-semibold leading-loose ${f.dark ? "text-slate-300" : "text-slate-600"}`}>
-                      {f.aside.split("·").map((item, j) => (
-                        <span key={j} className="block text-xl md:text-2xl font-black tracking-tight mb-2">
-                          {item.trim()}
-                        </span>
-                      ))}
-                    </p>
-                  </div>
+                <div className="mt-10 pt-6 border-t border-slate-200">
+                  <p className="text-sm font-bold text-slate-900 leading-snug">
+                    {f.aside.replace(/·/g, '•')}
+                  </p>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
         {/* ── PRICING ──────────────────────────────────────────────────────── */}
