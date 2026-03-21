@@ -73,7 +73,9 @@ export default function Home() {
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-sm z-50 border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="font-black text-2xl tracking-tight">Dineo</span>
+            <span className="font-black text-2xl tracking-tight text-slate-900">
+              Dineo<span className="text-[#9333ea]">.</span>
+            </span>
             <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
           </div>
           <div className="flex items-center gap-6">
@@ -82,7 +84,7 @@ export default function Home() {
               <a href="#pricing" className="hover:text-slate-900 transition-colors">Preços</a>
               <Link href="/admin/login" className="hover:text-slate-900 transition-colors">Login</Link>
             </div>
-            <Link href="/onboarding" className="bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-slate-700 transition-colors">
+            <Link href="/onboarding" className="bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-sm">
               Começar grátis
             </Link>
           </div>
@@ -91,19 +93,25 @@ export default function Home() {
 
       <main className="flex-1">
         {/* ── HERO ─────────────────────────────────────────────────────────── */}
-        <section className="pt-40 pb-24 px-6">
-          <div className="max-w-5xl mx-auto">
+        <section className="pt-40 pb-24 px-6 relative overflow-hidden">
+          {/* Subtle background glow for brand harmony */}
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#facc15]/5 rounded-full blur-[120px] -z-10 pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-[#9333ea]/5 rounded-full blur-[150px] -z-10 pointer-events-none -translate-x-1/2 translate-y-1/3"></div>
+          
+          <div className="max-w-5xl mx-auto relative z-10">
 
             {/* Eyebrow */}
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">
-              Dineo SaaS — Servyx, Cabo Verde
-            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 mb-8">
+              <p className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">
+                Dineo SaaS — Servyx, Cabo Verde
+              </p>
+            </div>
 
             {/* Headline — Sunday-style: massive, editorial, left-aligned */}
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.0] text-slate-900 mb-8 max-w-4xl">
               Mais pedidos.
               <br />
-              <span className="text-slate-400">Menos falhas.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">Menos falhas.</span>
             </h1>
 
             <p className="text-lg md:text-xl text-slate-500 max-w-xl leading-relaxed mb-10 font-medium">
@@ -111,7 +119,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-start gap-4">
-              <Link href="/onboarding" className="inline-flex items-center gap-2.5 bg-slate-900 text-white font-bold px-8 py-4 rounded-full hover:bg-slate-700 transition-colors text-base group">
+              <Link href="/onboarding" className="inline-flex items-center gap-2.5 bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white font-bold px-8 py-4 rounded-full hover:opacity-90 transition-opacity text-base group shadow-lg shadow-[#9333ea]/20">
                 Começar Gratuitamente
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -129,8 +137,10 @@ export default function Home() {
                 { n: "DNRE", l: "Fiscal em norma" },
               ].map((s, i) => (
                 <div key={i}>
-                  <p className="text-2xl font-black text-slate-900">{s.n}</p>
-                  <p className="text-sm text-slate-400 font-medium mt-0.5">{s.l}</p>
+                  <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">
+                    {s.n}
+                  </p>
+                  <p className="text-sm text-slate-500 font-medium mt-0.5">{s.l}</p>
                 </div>
               ))}
             </div>
@@ -138,13 +148,13 @@ export default function Home() {
         </section>
 
         {/* ── FEATURES: text-only horizontal carousel ─────────────── */}
-        <section id="features" className="py-20 md:py-28 bg-white overflow-hidden border-b border-slate-100">
+        <section id="features" className="py-20 md:py-28 bg-slate-50 overflow-hidden border-y border-slate-100 relative">
           <div className="max-w-6xl mx-auto px-6 mb-12">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-slate-900">
-              Tudo o que precisa.
+              Tudo o que <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">precisa.</span>
             </h2>
             <p className="text-slate-500 font-medium mt-4 text-lg">
-              Deslize para ver as funcionalidades.
+              Deslize para ver as funcionalidades projetadas para conversão.
             </p>
           </div>
           
@@ -153,20 +163,25 @@ export default function Home() {
             {features.map((f, i) => (
               <div 
                 key={i} 
-                className="snap-start shrink-0 w-[85vw] sm:w-[400px] bg-slate-50 border border-slate-100 rounded-[2rem] p-8 md:p-10 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                className="snap-start shrink-0 w-[85vw] sm:w-[400px] bg-white border border-slate-100 shadow-sm rounded-[2rem] p-8 md:p-10 flex flex-col justify-between hover:border-[#9333ea]/30 hover:shadow-md transition-all group"
               >
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-slate-400">
-                    {String(i + 1).padStart(2, "0")} — {f.label}
-                  </p>
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="text-sm font-black text-[#9333ea]">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9333ea]">
+                      {f.label}
+                    </p>
+                  </div>
                   <h3 className="text-2xl md:text-3xl font-black leading-[1.15] tracking-tight mb-4 text-slate-900">
                     {f.headline}
                   </h3>
-                  <p className="text-base leading-relaxed text-slate-500">
+                  <p className="text-base leading-relaxed text-slate-500 group-hover:text-slate-600 transition-colors">
                     {f.body}
                   </p>
                 </div>
-                <div className="mt-10 pt-6 border-t border-slate-200">
+                <div className="mt-10 pt-6 border-t border-slate-100">
                   <p className="text-sm font-bold text-slate-900 leading-snug">
                     {f.aside.replace(/·/g, '•')}
                   </p>
@@ -191,35 +206,42 @@ export default function Home() {
               {plans.map((plan, i) => (
                 <div
                   key={i}
-                  className={`rounded-3xl p-8 flex flex-col h-full transition-all ${
+                  className={`rounded-[2rem] p-8 flex flex-col h-full transition-all border ${
                     plan.highlighted
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-50 border border-slate-100"
+                      ? "bg-slate-950 border-slate-900 text-white shadow-2xl scale-100 md:scale-105 z-10 relative"
+                      : "bg-slate-50 border-slate-100 hover:border-slate-300"
                   }`}
                 >
-                  <p className={`text-xs font-black uppercase tracking-widest mb-4 ${plan.highlighted ? "text-slate-400" : "text-slate-400"}`}>
-                    {plan.name}
-                  </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className={`text-xs font-black uppercase tracking-widest ${plan.highlighted ? "text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]" : "text-slate-400"}`}>
+                      {plan.name}
+                    </p>
+                    {plan.highlighted && (
+                      <span className="bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full">
+                        Popular
+                      </span>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <span className={`text-5xl font-black ${plan.highlighted ? "text-white" : "text-slate-900"}`}>{plan.price}</span>
                     <span className={`text-sm ml-2 font-medium ${plan.highlighted ? "text-slate-400" : "text-slate-500"}`}>CVE/mês</span>
                   </div>
-                  <p className={`text-sm mb-8 font-medium ${plan.highlighted ? "text-slate-400" : "text-slate-500"}`}>{plan.desc}</p>
+                  <p className={`text-sm mb-8 font-medium ${plan.highlighted ? "text-slate-300" : "text-slate-500"}`}>{plan.desc}</p>
                   <Link
                     href="/onboarding"
-                    className={`w-full text-center font-bold py-3.5 rounded-full text-sm transition-colors mb-8 ${
+                    className={`w-full text-center font-bold py-3.5 rounded-full text-sm transition-opacity mb-8 hover:opacity-90 ${
                       plan.highlighted
-                        ? "bg-white text-slate-900 hover:bg-slate-100"
-                        : "bg-slate-900 text-white hover:bg-slate-700"
+                        ? "bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white shadow-md"
+                        : "bg-slate-900 text-white"
                     }`}
                   >
                     {plan.cta}
                   </Link>
-                  <div className="space-y-3 flex-1">
+                  <div className="space-y-3 flex-1 pb-2">
                     {plan.items.map((item, j) => (
                       <div key={j} className="flex items-start gap-3">
-                        <Check className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlighted ? "text-slate-300" : "text-slate-400"}`} />
-                        <span className={`text-sm font-medium ${plan.highlighted ? "text-slate-300" : "text-slate-600"}`}>{item}</span>
+                        <Check className={`w-4 h-4 mt-0.5 shrink-0 font-black ${plan.highlighted ? "text-[#facc15]" : "text-[#9333ea]"}`} />
+                        <span className={`text-sm font-bold ${plan.highlighted ? "text-white" : "text-slate-700"}`}>{item}</span>
                       </div>
                     ))}
                   </div>
@@ -230,17 +252,20 @@ export default function Home() {
         </section>
 
         {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-        <section className="py-24 md:py-32 px-6 bg-slate-950 text-white">
-          <div className="max-w-4xl mx-auto text-center">
+        <section className="py-24 md:py-32 px-6 bg-slate-950 text-white relative overflow-hidden border-t-4 border-[#9333ea]">
+          {/* Subtle glow behind the final CTA */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#9333ea]/20 blur-[150px] rounded-full pointer-events-none"></div>
+          
+          <div className="max-w-4xl mx-auto text-center relative z-10">
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] mb-8">
-              Pronto para levar o seu<br />restaurante para o próximo nível?
+              Pronto para levar o seu<br />restaurante para o <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">próximo nível?</span>
             </h2>
             <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto font-medium">
               Menos de 5 minutos para ver o painel em ação. Sem cartão de crédito.
             </p>
             <Link
               href="/onboarding"
-              className="inline-flex items-center gap-3 bg-white text-slate-900 font-black text-lg px-10 py-5 rounded-full hover:bg-slate-100 transition-colors group"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white font-black text-lg px-10 py-5 rounded-full hover:opacity-90 transition-opacity group shadow-xl"
             >
               Criar Conta Grátis
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
