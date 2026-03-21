@@ -28,7 +28,7 @@ const features = [
   },
   {
     label: "Pagamentos SISP",
-    headline: "Vinti4, cartão e dinheiro — tudo integrado no mesmo sistema.",
+    headline: "Cartão Vinti4 e Dinheiro tudo integrado no mesmo sistema.",
     body: "Feche contas de mesa com TPA integrado da SISP. O caixa gere gorjetas, NIF e emite recibos fiscais conformes com a DNRE — sem maquinetas externas nem duplo registo.",
     aside: "SISP Vinti4 · Fiscal DNRE · Gorjeta & NIF",
     dark: true,
