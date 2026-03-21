@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Crown, LogOut, ShieldAlert } from "lucide-react";
+import { Loader2, LayoutDashboard, LogOut, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -34,19 +34,18 @@ export default function SuperAdminLayout({
   if (loading || !isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex text-slate-300">
+    <div className="min-h-screen bg-slate-50 flex text-slate-900 font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-black border-r border-slate-800 flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-white font-bold text-lg">
-            <Crown className="w-6 h-6 text-amber-500" />
-            Dineo Master
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 relative z-20 shadow-sm">
+        <div className="h-16 flex items-center px-8 border-b border-slate-100">
+          <div className="flex items-center gap-2 text-slate-900 font-black text-xl tracking-tight">
+            Dineo
           </div>
         </div>
 
@@ -54,10 +53,10 @@ export default function SuperAdminLayout({
             <Link 
                 href="/superadmin"
                 className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all",
                     pathname === "/superadmin" 
-                        ? "bg-amber-500/10 text-amber-500" 
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        ? "bg-slate-100 text-slate-900" 
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium"
                 )}
             >
                 <LayoutDashboard className="w-5 h-5" />
@@ -65,26 +64,26 @@ export default function SuperAdminLayout({
             </Link>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-            <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700/50">
-                <div className="flex items-center gap-2 text-amber-500/80 mb-1">
-                    <ShieldAlert className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Acesso Raíz</span>
+        <div className="p-6 border-t border-slate-100">
+            <div className="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-200">
+                <div className="flex items-center gap-2 text-slate-700 mb-1">
+                    <ShieldAlert className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Acesso Sistema</span>
                 </div>
-                <p className="text-xs text-slate-500">Logado no núcleo principal do sistema.</p>
+                <p className="text-[11px] font-medium text-slate-500 leading-relaxed mt-1">Sessão iniciada no núcleo principal.</p>
             </div>
           <button 
             onClick={logout}
-            className="flex items-center gap-2 text-slate-400 hover:text-red-400 transition-colors px-2 py-2 w-full font-medium"
+            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors px-4 py-2.5 rounded-xl w-full font-bold text-sm"
           >
-            <LogOut className="w-5 h-5" />
-            Sair do Master
+            <LogOut className="w-4 h-4" />
+            Sair da Sessão
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-900 border-l border-white/5">
+      <main className="flex-1 flex flex-col min-w-0 bg-slate-50">
          {children}
       </main>
     </div>
