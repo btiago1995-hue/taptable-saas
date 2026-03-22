@@ -13,12 +13,12 @@ export function DigitalMenu() {
     const [activeCategory, setActiveCategory] = useState(categories?.[0] || "");
     const { cartItems, addToCart, removeFromCart } = useCart();
 
-    // Sync active category if the global categories list updates and we're missing it
+    // Sync active category when categories load for the first time
     useEffect(() => {
         if (!activeCategory && categories?.length > 0) {
             setActiveCategory(categories[0]);
         }
-    }, [activeCategory, categories]);
+    }, [categories]); // Intentionally only depends on categories, not activeCategory — avoids loop
 
     const visibleItems = useMemo(() => {
         if (!allMenuItems || !activeCategory) return [];
@@ -70,7 +70,7 @@ export function DigitalMenu() {
                         <div className="flex-1 flex flex-col justify-between">
                             <div>
                                 <h4 className="font-bold text-slate-900 leading-tight mb-1">{item.name}</h4>
-                                <p className="text-xs text-slate-500 line-clamp-2">{item.description || "Delicioso prato preparado com muito carinho."}</p>
+                                <p className="text-xs text-slate-500 line-clamp-2">{item.description}</p>
                             </div>
                             <div className="flex items-center justify-between mt-2">
                                 <span className="font-bold text-primary-700">{formatCurrency(item.price)}</span>

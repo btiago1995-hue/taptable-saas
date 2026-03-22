@@ -35,7 +35,11 @@ export default function DeliveryCheckoutPage() {
 
         const loadData = async () => {
             try {
-                const { data, error } = await supabase.from('restaurants').select('*').eq('id', restaurantId).single();
+                const { data, error } = await supabase
+                    .from('restaurants')
+                    .select('id, name, delivery_fee, vinti4_pos_id, vinti4_pos_aut_code')
+                    .eq('id', restaurantId)
+                    .single();
                 if (error) throw error;
                 if (data) setRestaurant(data);
             } catch (error) {

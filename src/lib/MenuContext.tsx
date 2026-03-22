@@ -78,11 +78,12 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                     setCategoriesState(catNodes.map(c => c.name));
                 }
 
-                // Fetch items
+                // Fetch items — ordered by category sort for consistency
                 const { data: dbItems, error: itemsErr } = await supabase
                     .from('menu_items')
-                    .select('*, menu_categories(name)')
-                    .eq('restaurant_id', restaurantId);
+                    .select('*, menu_categories(name, sort_order)')
+                    .eq('restaurant_id', restaurantId)
+                    .order('name', { ascending: true });
 
                 if (itemsErr) throw itemsErr;
 
@@ -92,9 +93,9 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                         name: i.name,
                         price: i.price,
                         status: i.status as any,
-                        category: i.menu_categories?.name || 'Vazio',
-                        description: i.description || "",
-                        imageUrl: i.image_url || ""
+                        category: i.menu_categories?.name || '',
+                        description: i.description || '',
+                        imageUrl: i.image_url || ''
                     }));
                     setItemsState(formatted);
                 }
@@ -178,7 +179,8 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    if (!isLoaded && restaurantId) return null;
+    // Do NOT return null here — renders loading state while menu is fetching
+    // The DigitalMenu component handles the empty state gracefully
 
     return (
         <MenuContext.Provider value={{ items, categories, setItems, setCategories }}>

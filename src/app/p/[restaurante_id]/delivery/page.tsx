@@ -25,7 +25,11 @@ export default function DeliveryMenuPage() {
 
         const loadData = async () => {
             try {
-                const { data, error } = await supabase.from('restaurants').select('*').eq('id', restaurantId).single();
+                const { data, error } = await supabase
+                    .from('restaurants')
+                    .select('id, name, delivery_fee')
+                    .eq('id', restaurantId)
+                    .single();
                 if (error) throw error;
                 if (data) setRestaurant(data);
             } catch (error) {
