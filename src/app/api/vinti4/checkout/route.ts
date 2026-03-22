@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateVinti4Fingerprint } from "@/lib/vinti4";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * POST /api/vinti4/checkout
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Fetch the Restaurant's Vinti4 Credentials
-        const { data: rest, error: restErr } = await supabase
+        const { data: rest, error: restErr } = await supabaseAdmin
             .from('restaurants')
             .select('vinti4_pos_id, vinti4_pos_aut_code')
             .eq('id', restaurantId)

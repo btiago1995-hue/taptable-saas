@@ -34,8 +34,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.className} bg-slate-50 text-slate-900 antialiased selection:bg-primary-200 selection:text-primary-900`}
       >
         <AuthProvider>

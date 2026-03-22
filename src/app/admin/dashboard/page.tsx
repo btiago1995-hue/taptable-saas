@@ -36,10 +36,11 @@ export default function AdminDashboard() {
                 // Fetch all closed orders with their items to calculate top sellers
                 const { data, error } = await supabase
                     .from('orders')
-                    .select('*, order_items(*)')
+                    .select('id, total_amount, tip, status, created_at, order_items(name, quantity, price)')
                     .eq('restaurant_id', user.restaurantId)
+                    .in('status', ['delivered', 'paid', 'completed', 'new', 'preparing', 'ready'])
                     .order('created_at', { ascending: false })
-                    .limit(500); // For MVP, fetching last 500 orders
+                    .limit(200); // Optimized: only fetch fields needed for dashboard calculations
 
                 if (data && !error) {
                     setAllHistoricalOrders(data);

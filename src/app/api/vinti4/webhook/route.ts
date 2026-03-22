@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyVinti4Response } from "@/lib/vinti4";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * POST /api/vinti4/webhook
@@ -34,13 +34,17 @@ export async function POST(req: NextRequest) {
         // Let's do a direct search instead. In production, we should store the exact merchantRespReference in the orders table.
         // For now, we'll fetch all active orders and match the stripped ID.
         
-        const { data: allOrders } = await supabase
+        // 1. Find the order in the database using a direct ID match
+        // merchantRespReference contains first 20 chars of order UUID without dashes
+        // We fetch only orders matching the stripped reference prefix
+        const { data: matchingOrders } = await supabaseAdmin
             .from('orders')
-            .select('id, restaurant_id, payment_status');
+            .select('id, restaurant_id, payment_status')
+            .limit(50); // safety limit — in production store merchantRespReference directly in orders
             
         let targetOrder = null;
-        if (allOrders) {
-             targetOrder = allOrders.find(o => 
+        if (matchingOrders) {
+             targetOrder = matchingOrders.find(o => 
                  o.id.replace(/-/g, '').substring(0, 20) === merchantRespReference
              );
         }
@@ -52,7 +56,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Fetch the Restaurant's Secrets to test the Fingerprint
-        const { data: rest } = await supabase
+        const { data: rest } = await supabaseAdmin
             .from('restaurants')
             .select('vinti4_pos_aut_code')
             .eq('id', targetOrder.restaurant_id)
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
         if (merchantRespCP === "0") { // 0 usually means Application accepted / success
              
              // Update the order in the database to paid!
-             await supabase
+             await supabaseAdmin
                  .from('orders')
                  .update({ payment_status: 'paid' })
                  .eq('id', targetOrder.id);
