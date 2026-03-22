@@ -68,14 +68,13 @@ export default function AnalyticsDashboard() {
 
                 if (ordersErr) throw ordersErr;
 
-                // 2. Fetch Refunds (Credit Notes)
-                const { data: creditNotes, error: cnErr } = await supabase
+                // 2. Fetch Refunds (Credit Notes) — gracefully handle if table doesn't exist yet
+                const { data: creditNotes } = await supabase
                     .from('credit_notes')
                     .select('value')
                     .eq('restaurant_id', user.restaurantId)
                     .gte('created_at', startDate.toISOString());
-
-                if (cnErr) throw cnErr;
+                // If error, creditNotes will be null — handled below as empty array
 
                 // 3. Process Data
                 const fetchedOrders = orders || [];
@@ -250,8 +249,9 @@ export default function AnalyticsDashboard() {
                         </span>
                     </div>
                     <div>
-                        <p className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-1">Tempo Médio p/ Servir (Meta)</p>
-                        <h3 className="text-3xl font-black text-slate-900">22 min</h3>
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-1">Tempo de Serviço</p>
+                        <h3 className="text-3xl font-black text-slate-900">—</h3>
+                        <p className="text-xs text-slate-400 mt-1">Métrica disponível em breve</p>
                     </div>
                 </div>
             </div>

@@ -23,6 +23,7 @@ export interface User {
         subscriptionExpiresAt?: string;
     };
     subscriptionPlan?: string;
+    subscriptionExpiresAt?: string;
     isRestaurantActive: boolean;
     accessModules: string[];
 }
@@ -75,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             subscriptionExpiresAt: profile.restaurants?.subscription_expires_at,
                         },
                         subscriptionPlan: profile.restaurants?.subscription_plan || 'starter',
+                        subscriptionExpiresAt: profile.restaurants?.subscription_expires_at || undefined,
                         isRestaurantActive: profile.restaurants?.is_active ?? true,
                         accessModules: profile.access_modules || []
                     });

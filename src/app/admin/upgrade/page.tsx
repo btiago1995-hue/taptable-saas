@@ -9,7 +9,7 @@ export default function UpgradePage() {
     const searchParams = useSearchParams();
     const feature = searchParams.get('feature');
     const { user } = useAuth();
-    const plan = user?.restaurantData?.subscriptionPlan || 'essencial';
+    const plan = user?.subscriptionPlan || 'starter';
 
     const featureMap: Record<string, { title: string, description: string, reqPlan: string, icon: any }> = {
         'kitchen': {

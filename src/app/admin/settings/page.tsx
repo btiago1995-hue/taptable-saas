@@ -140,9 +140,14 @@ function SettingsContent() {
     const handlePaySaaS = async () => {
         setIsSaving(true);
         try {
-            let amountDue = 4990;
-            if (user?.subscriptionPlan === 'essencial') amountDue = 1990;
-            else if (user?.subscriptionPlan === 'elite') amountDue = 9900;
+            // Map new plan IDs to their monthly prices
+            const planPrices: Record<string, number> = {
+                'starter': 1490,
+                'growth': 4990,
+                'pro': 9900,
+            };
+            const currentPlan = user?.subscriptionPlan || 'starter';
+            const amountDue = planPrices[currentPlan] ?? 4990;
 
             const res = await fetch('/api/vinti4/checkout', {
                 method: 'POST',
@@ -483,12 +488,14 @@ function SettingsContent() {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Plano Atual</p>
-                                            <h3 className="text-2xl font-black capitalize">{user?.restaurantData?.subscriptionPlan || 'Growth'} (Mensal)</h3>
+                                            <h3 className="text-2xl font-black capitalize">{user?.subscriptionPlan || 'Starter'} (Mensal)</h3>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Valor Licença</p>
                                             <div className="text-2xl font-black text-emerald-400">
-                                                {formatCurrency(user?.restaurantData?.subscriptionPlan === 'essencial' ? 1990 : user?.restaurantData?.subscriptionPlan === 'elite' ? 9900 : 4990)}
+                                                {formatCurrency(
+                                                    ({'starter': 1490, 'growth': 4990, 'pro': 9900} as Record<string, number>)[user?.subscriptionPlan || 'growth'] ?? 4990
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -501,7 +508,11 @@ function SettingsContent() {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold text-slate-400 uppercase">Próximo Vencimento</p>
-                                                <p className="font-bold text-slate-800">15 de Abril de 2026</p>
+                                                <p className="font-bold text-slate-800">
+                                                    {user?.subscriptionExpiresAt 
+                                                        ? new Date(user.subscriptionExpiresAt).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })
+                                                        : 'Sem vencimento definido'}
+                                                </p>
                                             </div>
                                         </div>
                                         <button 
@@ -529,23 +540,12 @@ function SettingsContent() {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <h4 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-4">Histórico Recente</h4>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <div>
-                                            <div className="font-bold text-slate-700">INV-2026-03</div>
-                                            <div className="text-slate-500 text-xs">15 Mar 2026</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold text-slate-900">Liquidado</div>
-                                            <div className="text-emerald-600 text-xs flex items-center gap-1 justify-end mt-0.5 font-bold">
-                                                <CheckCircle2 className="w-3 h-3" /> OK
-                                            </div>
-                                        </div>
+                                <div className="p-6">
+                                    <h4 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-4">Histórico</h4>
+                                    <div className="text-center py-6 text-slate-400 text-sm font-medium">
+                                        O histórico de faturas será exibido aqui após o primeiro pagamento via Vinti4.
                                     </div>
                                 </div>
-                            </div>
                         </div>
                     )}
 
