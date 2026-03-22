@@ -8,10 +8,12 @@ interface ReceiptWaybillProps {
     restaurantName: string;
     restaurantNif?: string;
     restaurantAddress?: string;
+    iud?: string;         // IUD E-Fatura (45 chars) — preenchido após emissão
+    numeroDoc?: string;   // Número do documento (ex: "GT 2026/00000001")
 }
 
 export function openWaybillWindow(props: ReceiptWaybillProps) {
-    const { order, restaurantName, restaurantNif, restaurantAddress } = props;
+    const { order, restaurantName, restaurantNif, restaurantAddress, iud, numeroDoc } = props;
 
     // Create a new window for printing
     const printWindow = window.open('', '_blank', 'width=400,height=600');
@@ -108,6 +110,14 @@ export function openWaybillWindow(props: ReceiptWaybillProps) {
             <div class="alert-box">
                 ARTIGO ABRANGIDO PELO REGIME DE BENS EM CIRCULAÇÃO (DNRE / E-FATURA)
             </div>
+
+            ${iud ? `
+            <div class="divider"></div>
+            <div style="font-size: 9px; word-break: break-all;">
+                ${numeroDoc ? `<div><span class="font-bold">Doc. Fiscal:</span> ${numeroDoc}</div>` : ''}
+                <div><span class="font-bold">IUD:</span> ${iud}</div>
+            </div>
+            ` : ''}
 
             <div class="text-center" style="margin-top: 15px; font-size: 10px;">
                 <p>Processado por programa certificado.</p>

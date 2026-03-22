@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { hasFeature, normalizePlan } from "@/lib/planGate";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -53,10 +54,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 else if (mods.includes("kitchen")) router.push("/admin/kitchen");
             }
 
-            // Plan-based route protection
-            const plan = user.restaurantData?.subscriptionPlan || 'growth';
-            if (plan === 'essencial' && (pathname === '/admin/kitchen' || pathname === '/admin/analytics' || pathname === '/driver')) {
-                router.push('/admin/upgrade?feature=' + pathname.replace('/admin/', '').replace('/', ''));
+            // Plan-based route protection using planGate
+            const plan = normalizePlan(user.restaurantData?.subscriptionPlan);
+            const gatedRoutes: Record<string, string> = {
+                '/admin/kitchen': 'kds',
+                '/admin/analytics': 'analytics',
+                '/driver': 'driver',
+                '/admin/conta-corrente': 'conta_corrente',
+                '/admin/saft': 'saft',
+                '/admin/retencoes': 'retencoes',
+            };
+            const requiredFeature = gatedRoutes[pathname];
+            if (requiredFeature && !hasFeature(plan, requiredFeature as any)) {
+                router.push('/admin/upgrade?feature=' + requiredFeature);
             }
         }
     }, [isAuthenticated, pathname, router, user]);
@@ -68,40 +78,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <>{children}</>;
     }
 
-    // Role-based Navigation using granular accessModules
+    // Role-based Navigation using granular accessModules + planGate
     const getAllLinks = () => {
         const mods = user?.accessModules || [];
         const isManager = user?.role === 'manager';
-        const plan = user?.restaurantData?.subscriptionPlan || 'growth';
+        const plan = normalizePlan(user?.restaurantData?.subscriptionPlan);
         const links = [];
 
         if (isManager || mods.includes("dashboard")) links.push({ name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard });
         if (isManager || mods.includes("cashier")) links.push({ name: "Caixa / Mesas", href: "/admin/cashier", icon: Receipt });
-        
-        if (plan !== 'essencial') {
-            if (isManager || mods.includes("kitchen")) links.push({ name: "Cozinha", href: "/admin/kitchen", icon: ChefHat });
-        } else {
-            if (isManager || mods.includes("kitchen")) links.push({ name: "Cozinha 🔒", href: "/admin/upgrade?feature=kitchen", icon: ChefHat });
+
+        // KDS — growth+
+        if (isManager || mods.includes("kitchen")) {
+            links.push(hasFeature(plan, 'kds')
+                ? { name: "Cozinha", href: "/admin/kitchen", icon: ChefHat }
+                : { name: "Cozinha 🔒", href: "/admin/upgrade?feature=kds", icon: ChefHat });
         }
 
         if (isManager || mods.includes("waiter")) links.push({ name: "Painel Garçom", href: "/admin/waiter", icon: Users });
         if (isManager || mods.includes("menu")) links.push({ name: "Cardápio", href: "/admin/menu", icon: Store });
         if (isManager || mods.includes("dashboard")) links.push({ name: "Equipe", href: "/admin/staff", icon: UserCog });
-        
+
         // Extended manager features
         if (isManager || mods.includes("dashboard")) {
-             if (plan !== 'essencial') {
-                 links.push({ name: "Analytics", href: "/admin/analytics", icon: PieChart });
-             } else {
-                 links.push({ name: "Analytics 🔒", href: "/admin/upgrade?feature=analytics", icon: PieChart });
-             }
+            // Analytics — growth+
+            links.push(hasFeature(plan, 'analytics')
+                ? { name: "Analytics", href: "/admin/analytics", icon: PieChart }
+                : { name: "Analytics 🔒", href: "/admin/upgrade?feature=analytics", icon: PieChart });
 
-             links.push(
+            // Conta Corrente — growth+
+            links.push(hasFeature(plan, 'conta_corrente')
+                ? { name: "Conta Corrente", href: "/admin/conta-corrente", icon: CreditCard }
+                : { name: "Conta Corrente 🔒", href: "/admin/upgrade?feature=conta_corrente", icon: CreditCard });
+
+            links.push(
                 { name: "Clientes", href: "/admin/customers", icon: Users },
                 { name: "Configurações", href: "/admin/settings", icon: Settings }
-             );
+            );
+
+            // SAF-T — pro only
+            if (hasFeature(plan, 'saft')) {
+                links.push({ name: "SAF-T Export", href: "/admin/saft", icon: Megaphone });
+            }
+
+            // Retenções — pro only
+            if (hasFeature(plan, 'retencoes')) {
+                links.push({ name: "Retenções IRS/IRC", href: "/admin/retencoes", icon: ShieldAlert });
+            }
         }
-        
+
         // Remove duplicates if any
         return links.filter((v,i,a) => a.findIndex(v2=>(v2.href===v.href))===i);
     };
