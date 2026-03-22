@@ -156,7 +156,7 @@ export default function SuccessPage() {
             {/* Display Recibo Compartilhável Se Existir Dados do Pedido */}
             {orderData && (
                 <div className="w-full max-w-sm mt-2">
-                    <OrderReceiptPDF 
+                    <OrderReceiptPDF
                         orderId={orderData.id}
                         items={orderData.order_items || []}
                         subtotal={orderData.subtotal}
@@ -165,6 +165,8 @@ export default function SuccessPage() {
                         deliveryFee={orderData.delivery_fee}
                         restaurantName={"Restaurante Parceiro Dineo"} // Idealmente viria de um fetch do restaurant
                         createdAt={orderData.created_at}
+                        iud={orderData.iud}
+                        documentNumber={orderData.document_number}
                     />
                 </div>
             )}

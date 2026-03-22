@@ -21,6 +21,8 @@ interface OrderReceiptPDFProps {
     deliveryFee?: number;
     restaurantName: string;
     createdAt: string;
+    iud?: string;
+    documentNumber?: string;
 }
 
 export function OrderReceiptPDF({
@@ -31,7 +33,9 @@ export function OrderReceiptPDF({
     tip,
     deliveryFee,
     restaurantName,
-    createdAt
+    createdAt,
+    iud,
+    documentNumber,
 }: OrderReceiptPDFProps) {
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -146,6 +150,21 @@ export function OrderReceiptPDF({
                     <span>TOTAL:</span>
                     <span>{formatCurrency(totalAmount)}</span>
                 </div>
+
+                {iud && (
+                    <>
+                        <div style={{ borderBottom: '1px dashed #ccc', marginTop: '20px', marginBottom: '10px' }} />
+                        <div style={{ fontSize: '9px', color: '#444', marginBottom: '4px' }}>
+                            <strong>Doc Fiscal:</strong> {documentNumber || '—'}
+                        </div>
+                        <div style={{ fontSize: '8px', color: '#666', wordBreak: 'break-all', letterSpacing: '0.5px', fontFamily: 'monospace' }}>
+                            IUD: {iud}
+                        </div>
+                        <div style={{ fontSize: '8px', color: '#999', marginTop: '4px' }}>
+                            Processado por E-Fatura DNRE · Cabo Verde
+                        </div>
+                    </>
+                )}
 
                 <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '10px', color: '#666' }}>
                     Obrigado pela preferência!<br/>

@@ -92,14 +92,22 @@ export async function POST(req: NextRequest) {
         // Or if merchantResp inside has "000" for success. We'll check the CP code.
         
         if (merchantRespCP === "0") { // 0 usually means Application accepted / success
-             
+
              // Update the order in the database to paid!
              await supabaseAdmin
                  .from('orders')
                  .update({ payment_status: 'paid' })
                  .eq('id', targetOrder.id);
-                 
+
              console.log(`Vinti4 Webhook: Order ${targetOrder.id} successfully PAID via Vinti4Net!`);
+
+             // Gerar IUD E-Fatura (fire-and-forget — não impede a resposta ao SISP)
+             const baseUrl = new URL(req.url).origin;
+             fetch(`${baseUrl}/api/efatura/iud`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ orderId: targetOrder.id, restaurantId: targetOrder.restaurant_id }),
+             }).catch(err => console.error('[E-Fatura] Erro ao gerar IUD Vinti4:', err));
         } else {
              console.log(`Vinti4 Webhook: Payment failed or declined. CP: ${merchantRespCP}`);
         }

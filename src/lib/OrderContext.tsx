@@ -385,6 +385,18 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             console.error("Error closing orders:", error);
             throw error;
         }
+
+        // Gerar IUD E-Fatura para cada pedido (fire-and-forget — não bloqueia o caixa)
+        const currentRestaurantId = restaurantId;
+        if (currentRestaurantId) {
+            orderIds.forEach(orderId => {
+                fetch('/api/efatura/iud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, restaurantId: currentRestaurantId }),
+                }).catch(err => console.error('[E-Fatura] Erro ao gerar IUD para pedido', orderId, err));
+            });
+        }
     };
 
     const markItemDelivered = async (orderId: string, itemId: string) => {
