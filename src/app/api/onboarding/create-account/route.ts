@@ -28,13 +28,19 @@ export async function POST(req: NextRequest) {
 
         const userId = authData.user.id;
 
-        // 2. Criar o restaurante (tenant isolado)
+        // 2. Criar o restaurante (tenant isolado) com 30 dias de trial
+        const trialExpiresAt = new Date();
+        trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
+
         const { data: restData, error: restErr } = await supabaseAdmin
             .from('restaurants')
             .insert([{
                 name: restaurantName,
                 subscription_plan: plan,
-                is_active: true
+                is_active: true,
+                subscription_started_at: new Date().toISOString(),
+                subscription_expires_at: trialExpiresAt.toISOString(),
+                subscription_billing: 'monthly'
             }])
             .select('id')
             .single();

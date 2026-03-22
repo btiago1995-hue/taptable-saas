@@ -107,7 +107,7 @@ export default function OnboardingWizard() {
                         {[
                             { step: 1, label: "A sua Conta", desc: "Acessos de Gestor Principal" },
                             { step: 2, label: "O Restaurante", desc: "O seu espaço no Dineo" },
-                            { step: 3, label: "O seu Plano", desc: "Comece 14 dias sem risco" }
+                            { step: 3, label: "O seu Plano", desc: "Comece 30 dias sem risco" }
                         ].map((s) => (
                             <div key={s.step} className="flex gap-6 relative z-10 transition-all duration-500" style={{ opacity: step >= s.step ? 1 : 0.4 }}>
                                 <div className={cn(
@@ -230,7 +230,7 @@ export default function OnboardingWizard() {
                             </button>
                             
                             <h2 className="text-3xl font-black text-slate-900 mb-2 mt-4 tracking-tight">Escolha o seu Plano</h2>
-                            <p className="text-slate-500 font-medium mb-8">Todos os planos incluem 14 dias de teste gratuito.</p>
+                            <p className="text-slate-500 font-medium mb-8">Todos os planos incluem 30 dias de teste gratuito.</p>
 
                             <div className="space-y-4 flex-1">
                                 {/* Plan Card: Starter */}

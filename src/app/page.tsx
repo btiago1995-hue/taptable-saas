@@ -57,7 +57,7 @@ const PLANS = [
     price: { monthly: 2990, quarterly: 7990, annual: 29900 },
     desc: "O ecossistema completo de restauração.",
     items: ["Tudo do Starter", "KDS de Cozinha em Tempo Real", "App do Garçom", "Delivery \u0026 Guias de Transporte", "Analytics \u0026 CRM Real", "Conta Corrente Clientes", "SISP Vinti4"],
-    cta: "Testar 14 Dias Grátis",
+    cta: "Testar 30 Dias Grátis",
     href: "/onboarding?plan=growth",
     highlighted: true,
   },
@@ -157,7 +157,7 @@ export default function Home() {
             {/* Social proof numbers */}
             <div className="flex flex-wrap gap-10 mt-16 pt-12 border-t border-slate-100">
               {[
-                { n: "14 dias", l: "Trial grátis" },
+                { n: "30 dias", l: "Trial grátis" },
                 { n: "99.9%", l: "uptime garantido" },
                 { n: "SISP", l: "Vinti4 integrado" },
                 { n: "DNRE", l: "Fiscal em norma" },
@@ -225,7 +225,7 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-900 mb-4">
                 Um plano para <br />cada restaurante.
               </h2>
-              <p className="text-slate-500 text-lg font-medium">Trial gratuito de 14 dias. Sem cartão exigido.</p>
+              <p className="text-slate-500 text-lg font-medium">Trial gratuito de 30 dias. Sem cartão exigido.</p>
             </div>
 
             {/* Billing period toggle */}
