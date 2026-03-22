@@ -54,6 +54,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 else if (mods.includes("kitchen")) router.push("/admin/kitchen");
             }
 
+            // Trial expiry check — se expirou, cortar acesso
+            if (user.role !== 'superadmin' && pathname !== '/admin/upgrade') {
+                const expiresAt = user.restaurantData?.subscriptionExpiresAt;
+                if (expiresAt && new Date(expiresAt) < new Date()) {
+                    router.push('/admin/upgrade?expired=true');
+                    return;
+                }
+            }
+
             // Plan-based route protection using planGate
             const plan = normalizePlan(user.restaurantData?.subscriptionPlan);
             const gatedRoutes: Record<string, string> = {
