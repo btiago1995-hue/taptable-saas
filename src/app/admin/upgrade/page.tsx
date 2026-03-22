@@ -126,7 +126,7 @@ export default function UpgradePage() {
             </div>
 
             {/* Cards de Upgrade */}
-            <div className={`w-full max-w-2xl grid gap-4 ${isTrialExpired ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}>
+            <div className={`w-full max-w-2xl grid gap-4 mx-auto ${isTrialExpired ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 justify-items-center"}`}>
 
                 {/* Starter → Growth (Self-service) */}
                 {(targetPlan === "growth" || isTrialExpired) && currentPlan === "starter" && (
@@ -146,7 +146,7 @@ export default function UpgradePage() {
                         >
                             Fazer Upgrade <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <p className="text-xs text-slate-400 text-center mt-3 font-medium">Pagamento via Vinti4 / TPA</p>
+                        <p className="text-xs text-slate-400 text-center mt-3 font-medium">Pagamento via Vinti4</p>
                     </div>
                 )}
 
