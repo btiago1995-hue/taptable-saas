@@ -253,7 +253,7 @@ export default function OnboardingWizard() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-2">
                                                 <span className="font-black text-lg text-slate-900">Starter</span>
-                                                <span className="font-black text-slate-700 shrink-0">1.490 CVE</span>
+                                                <span className="font-black text-slate-700 shrink-0">1.490 CVE<span className="text-xs font-medium text-slate-400">/mês</span></span>
                                             </div>
                                             <p className="text-sm font-medium text-slate-500 mt-1">Cardápio QR e Ponto de Venda (Salão).</p>
                                         </div>
@@ -282,7 +282,7 @@ export default function OnboardingWizard() {
                                                     <span className={`font-black text-lg ${formData.plan === "growth" ? "text-white" : "text-slate-900"}`}>Growth</span>
                                                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${formData.plan === "growth" ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500"}`}>Popular</span>
                                                 </div>
-                                                <span className={`font-black shrink-0 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-700"}`}>4.990 CVE</span>
+                                                <span className={`font-black shrink-0 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-700"}`}>2.990 CVE<span className={`text-xs font-medium ${formData.plan === "growth" ? "text-slate-400" : "text-slate-400"}`}>/mês</span></span>
                                             </div>
                                             <p className={`text-sm font-medium mt-1 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-500"}`}>KDS, Display de Cobertura e App de Entrega.</p>
                                         </div>
@@ -311,7 +311,7 @@ export default function OnboardingWizard() {
                                                     <span className="font-black text-lg text-slate-900">PRO</span>
                                                     <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-900 text-white">Premium</span>
                                                 </div>
-                                                <span className="font-black text-slate-700 shrink-0">9.900 CVE</span>
+                                                <span className="font-black text-slate-700 shrink-0">5.990 CVE<span className="text-xs font-medium text-slate-400">/mês</span></span>
                                             </div>
                                             <p className="text-sm font-medium text-slate-500 mt-1">Operações logísticas próprias e DNRE.</p>
                                         </div>

@@ -8,6 +8,8 @@ import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency } from "@/lib/utils";
+import { PLAN_INFO, normalizePlan } from "@/lib/planGate";
+
 
 export default function AdminSettings() {
     return (
@@ -140,14 +142,11 @@ function SettingsContent() {
     const handlePaySaaS = async () => {
         setIsSaving(true);
         try {
-            // Map new plan IDs to their monthly prices
-            const planPrices: Record<string, number> = {
-                'starter': 1490,
-                'growth': 4990,
-                'pro': 9900,
-            };
-            const currentPlan = user?.subscriptionPlan || 'starter';
-            const amountDue = planPrices[currentPlan] ?? 4990;
+            // Preços reais por plano e billing — fonte única: planGate.ts
+            const currentPlan = (user?.subscriptionPlan || 'starter') as 'starter' | 'growth' | 'pro';
+            const billing = user?.restaurantData?.subscriptionBilling || 'monthly';
+            const planInfo = PLAN_INFO[currentPlan] ?? PLAN_INFO['starter'];
+            const amountDue = planInfo.price[billing] ?? planInfo.price['monthly'];
 
             const res = await fetch('/api/vinti4/checkout', {
                 method: 'POST',
@@ -493,9 +492,12 @@ function SettingsContent() {
                                         <div className="text-right">
                                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Valor Licença</p>
                                             <div className="text-2xl font-black text-emerald-400">
-                                                {formatCurrency(
-                                                    ({'starter': 1490, 'growth': 4990, 'pro': 9900} as Record<string, number>)[user?.subscriptionPlan || 'growth'] ?? 4990
-                                                )}
+                                                {(() => {
+                                                    const plan = (user?.subscriptionPlan || 'starter') as 'starter' | 'growth' | 'pro';
+                                                    const billing = user?.restaurantData?.subscriptionBilling || 'monthly';
+                                                    const price = PLAN_INFO[plan]?.price[billing] ?? PLAN_INFO[plan]?.price['monthly'] ?? 0;
+                                                    return formatCurrency(price);
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
