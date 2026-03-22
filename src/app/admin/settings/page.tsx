@@ -371,15 +371,15 @@ function SettingsContent() {
                                     const hasDelivery = hasFeature(plan, 'delivery');
                                     if (!hasDelivery) {
                                         return (
-                                            <div className="p-5 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center gap-4 print:hidden">
-                                                <div className="p-2.5 bg-slate-200 rounded-xl shrink-0">
-                                                    <LinkIcon className="w-5 h-5 text-slate-400" />
+                                            <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center text-center gap-4 print:hidden">
+                                                <div className="p-3 bg-slate-200 rounded-xl">
+                                                    <LinkIcon className="w-6 h-6 text-slate-400" />
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-sm text-slate-600 mb-0.5">Link para Delivery & Redes Sociais</p>
-                                                    <p className="text-xs text-slate-400">Disponível no plano Growth. Partilhe o link de delivery no Instagram e WhatsApp.</p>
+                                                <div>
+                                                    <p className="font-bold text-sm text-slate-700 mb-1">Link para Delivery e Retiradas no Balcão</p>
+                                                    <p className="text-xs text-slate-400 max-w-xs mx-auto">Disponível no plano Growth. Partilhe o link do seu cardápio digital nas redes sociais para receber pedidos de delivery e retirada no balcão sem precisar de telefone.</p>
                                                 </div>
-                                                <a href="/admin/upgrade?feature=delivery" className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-colors whitespace-nowrap">
+                                                <a href="/admin/upgrade?feature=delivery" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-colors">
                                                     Ver Planos
                                                 </a>
                                             </div>
@@ -389,9 +389,9 @@ function SettingsContent() {
                                         <div className="p-4 md:p-6 bg-indigo-50 border border-indigo-100 rounded-xl print:hidden flex flex-col sm:flex-row gap-6 items-center">
                                             <div className="flex-1">
                                                 <h4 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
-                                                    <LinkIcon className="w-4 h-4" /> Link para Delivery & Redes Sociais
+                                                    <LinkIcon className="w-4 h-4" /> Link para Delivery e Retiradas no Balcão
                                                 </h4>
-                                                <p className="text-xs text-indigo-700 mb-4 leading-relaxed">Compartilhe este link no seu perfil do Instagram ou via WhatsApp para receber pedidos externos (Delivery e Retirada) diretamente no painel do restaurante.</p>
+                                                <p className="text-xs text-indigo-700 mb-4 leading-relaxed">Disponibilize este link do seu cardápio digital nas suas redes sociais (Instagram, WhatsApp, Facebook) para que os clientes possam fazer pedidos de delivery ou retirada no balcão directamente, sem necessidade de telefonema.</p>
                                                 <div className="flex items-center gap-2">
                                                     <input 
                                                         readOnly 
