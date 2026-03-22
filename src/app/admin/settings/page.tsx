@@ -8,7 +8,8 @@ import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency } from "@/lib/utils";
-import { PLAN_INFO, normalizePlan } from "@/lib/planGate";
+import { PLAN_INFO, normalizePlan, hasFeature } from "@/lib/planGate";
+
 
 
 export default function AdminSettings() {
@@ -365,39 +366,61 @@ function SettingsContent() {
 
                             <div className="space-y-6">
                                 {/* Delivery Link Section */}
-                                <div className="p-4 md:p-6 bg-indigo-50 border border-indigo-100 rounded-xl print:hidden flex flex-col sm:flex-row gap-6 items-center">
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
-                                            <LinkIcon className="w-4 h-4" /> Link para Delivery & Redes Sociais
-                                        </h4>
-                                        <p className="text-xs text-indigo-700 mb-4 leading-relaxed">Compartilhe este link no seu perfil do Instagram ou via WhatsApp para receber pedidos externos (Delivery e Retirada) diretamente no painel do restaurante.</p>
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                readOnly 
-                                                value={deliveryQr?.link || ''} 
-                                                className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none select-all font-mono"
-                                            />
-                                            <button 
-                                                onClick={() => {
-                                                    if (user?.restaurantId) {
-                                                        navigator.clipboard.writeText(deliveryQr?.link || '');
-                                                        alert("Link copiado para a área de transferência!");
-                                                    }
-                                                }}
-                                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap"
-                                            >
-                                                Copiar
-                                            </button>
+                                {(() => {
+                                    const plan = normalizePlan(user?.restaurantData?.subscriptionPlan);
+                                    const hasDelivery = hasFeature(plan, 'delivery');
+                                    if (!hasDelivery) {
+                                        return (
+                                            <div className="p-5 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center gap-4 print:hidden">
+                                                <div className="p-2.5 bg-slate-200 rounded-xl shrink-0">
+                                                    <LinkIcon className="w-5 h-5 text-slate-400" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-sm text-slate-600 mb-0.5">Link para Delivery & Redes Sociais</p>
+                                                    <p className="text-xs text-slate-400">Disponível no plano Growth. Partilhe o link de delivery no Instagram e WhatsApp.</p>
+                                                </div>
+                                                <a href="/admin/upgrade?feature=delivery" className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-colors whitespace-nowrap">
+                                                    Ver Planos
+                                                </a>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div className="p-4 md:p-6 bg-indigo-50 border border-indigo-100 rounded-xl print:hidden flex flex-col sm:flex-row gap-6 items-center">
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-sm text-indigo-900 mb-2 flex items-center gap-2">
+                                                    <LinkIcon className="w-4 h-4" /> Link para Delivery & Redes Sociais
+                                                </h4>
+                                                <p className="text-xs text-indigo-700 mb-4 leading-relaxed">Compartilhe este link no seu perfil do Instagram ou via WhatsApp para receber pedidos externos (Delivery e Retirada) diretamente no painel do restaurante.</p>
+                                                <div className="flex items-center gap-2">
+                                                    <input 
+                                                        readOnly 
+                                                        value={deliveryQr?.link || ''} 
+                                                        className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none select-all font-mono"
+                                                    />
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (user?.restaurantId) {
+                                                                navigator.clipboard.writeText(deliveryQr?.link || '');
+                                                                alert("Link copiado para a área de transferência!");
+                                                            }
+                                                        }}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap"
+                                                    >
+                                                        Copiar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {deliveryQr && (
+                                                <div className="shrink-0 flex flex-col items-center bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={deliveryQr.url} alt="Delivery QR Code" className="w-24 h-24 mb-2" />
+                                                    <span className="text-xs font-bold text-indigo-600">Scan Delivery</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                    {deliveryQr && (
-                                        <div className="shrink-0 flex flex-col items-center bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={deliveryQr.url} alt="Delivery QR Code" className="w-24 h-24 mb-2" />
-                                            <span className="text-xs font-bold text-indigo-600">Scan Delivery</span>
-                                        </div>
-                                    )}
-                                </div>
+                                    );
+                                })()}
 
                                 <div className="border-t border-slate-100 pt-6 print:hidden">
                                     <h4 className="font-bold text-sm text-slate-800 mb-4">Mapeamento de Mesas Físicas (Salão)</h4>
