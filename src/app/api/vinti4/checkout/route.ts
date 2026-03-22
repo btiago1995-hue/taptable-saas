@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
         const currency = "132"; // ISO Numeric Code for CVE (Escudo Cabo-verdiano)
         const transactionCode = "1"; // 1 = Compra normal 3DS
 
+        // 2a. Persistir o merchantRef na tabela orders para lookup directo no webhook
+        await supabaseAdmin
+            .from('orders')
+            .update({ merchant_ref: merchantRef })
+            .eq('id', orderId);
+
         // 3. Generate Security Fingerprint
         const fingerprint = generateVinti4Fingerprint({
             posAutCode: POS_AUT_CODE,
@@ -53,8 +59,16 @@ export async function POST(req: NextRequest) {
             transactionCode,
         });
 
-        // 4. Return the data payload. The frontend will take this and build an invisible 
+        // 4. Return the data payload. The frontend will take this and build an invisible
         // HTML form that automatically submits via POST to the Vinti4 platform.
+
+        // Construir a URL de callback dinamicamente a partir do request
+        const xForwardedHost = req.headers.get('x-forwarded-host');
+        const origin = xForwardedHost
+            ? `https://${xForwardedHost}`
+            : req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+        const webhookUrl = `${origin}/api/vinti4/webhook`;
+
         return NextResponse.json({
             success: true,
             actionUrl: "https://www.vinti4net.cv/pes/index.jsf", // Production URL standard. (Test URL might be different based on SISP manual)
@@ -67,7 +81,7 @@ export async function POST(req: NextRequest) {
                 transactionCode: transactionCode,
                 timeStamp: timeStamp,
                 fingerprint: fingerprint,
-                urlMerchantResponse: `${process.env.NEXT_PUBLIC_SITE_URL}/api/vinti4/webhook`,
+                urlMerchantResponse: webhookUrl,
             }
         });
 

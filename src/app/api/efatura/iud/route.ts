@@ -150,12 +150,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. Actualizar o hash mais recente da série para o próximo documento
-    await supabase.rpc("efatura_update_last_hash", {
+    const { error: hashError } = await supabase.rpc("efatura_update_last_hash", {
       p_restaurant_id: restaurantId,
       p_tipo_documento: tipoDocumento,
       p_ano: ano,
       p_hash: resultado.hash,
     });
+
+    if (hashError) {
+      // Log crítico — a sequência está em risco. Não reverter o IUD (já emitido),
+      // mas alertar para intervenção manual.
+      console.error("[E-Fatura] CRÍTICO: IUD emitido mas hash da série não actualizado.", {
+        orderId,
+        iud: resultado.iud,
+        hash: resultado.hash,
+        error: hashError,
+      });
+      // Retornar sucesso com aviso — o IUD é válido, mas a série precisa de verificação
+      return NextResponse.json({
+        iud: resultado.iud,
+        numeroDoc: resultado.numeroDoc,
+        hash: resultado.hash,
+        tipoDocumento,
+        sequencial: proximo_sequencial,
+        warning: "IUD emitido. Verifique a integridade da série manualmente.",
+      });
+    }
 
     return NextResponse.json({
       iud: resultado.iud,

@@ -29,24 +29,16 @@ export async function POST(req: NextRequest) {
              return NextResponse.json({ error: "Missing reference" }, { status: 400 });
         }
 
-        // 1. Find the order in the database
-        // merchantRespReference contains the first 20 chars of order id without dashes
-        // Let's do a direct search instead. In production, we should store the exact merchantRespReference in the orders table.
-        // For now, we'll fetch all active orders and match the stripped ID.
-        
-        // 1. Find the order in the database using a direct ID match
-        // merchantRespReference contains first 20 chars of order UUID without dashes
-        // We fetch only orders matching the stripped reference prefix
+        // 1. Find the order in the database using a direct merchant_ref lookup
+        // merchantRespReference matches the merchant_ref column stored at checkout time
         const { data: matchingOrders } = await supabaseAdmin
             .from('orders')
-            .select('id, restaurant_id, payment_status')
-            .limit(50); // safety limit — in production store merchantRespReference directly in orders
-            
+            .select('id, restaurant_id, payment_status, merchant_ref')
+            .eq('merchant_ref', merchantRespReference);
+
         let targetOrder = null;
-        if (matchingOrders) {
-             targetOrder = matchingOrders.find(o => 
-                 o.id.replace(/-/g, '').substring(0, 20) === merchantRespReference
-             );
+        if (matchingOrders && matchingOrders.length > 0) {
+             targetOrder = matchingOrders[0];
         }
 
         if (!targetOrder) {
@@ -84,6 +76,29 @@ export async function POST(req: NextRequest) {
         if (!isValid) {
              console.error("Vinti4 Webhook: INVALID FINGERPRINT. Possible Fraud.");
              return NextResponse.json({ success: true }); // Return 200 so SISP shuts up, but we ignore the payload
+        }
+
+        // 3a. Idempotência — se já está pago, ignorar duplicado
+        if (targetOrder.payment_status === 'paid') {
+            console.log(`Vinti4 Webhook: Order ${targetOrder.id} already paid, ignoring duplicate.`);
+            return NextResponse.json({ success: true });
+        }
+
+        // 3b. Validação de timestamp — rejeitar replays com mais de 10 minutos
+        const tsStr = merchantRespTimeStamp;
+        if (tsStr && tsStr.length === 14) {
+            const year = parseInt(tsStr.slice(0, 4));
+            const month = parseInt(tsStr.slice(4, 6)) - 1;
+            const day = parseInt(tsStr.slice(6, 8));
+            const hour = parseInt(tsStr.slice(8, 10));
+            const min = parseInt(tsStr.slice(10, 12));
+            const sec = parseInt(tsStr.slice(12, 14));
+            const tsDate = new Date(Date.UTC(year, month, day, hour, min, sec));
+            const diffMs = Date.now() - tsDate.getTime();
+            if (diffMs > 10 * 60 * 1000) { // 10 minutos
+                console.warn(`Vinti4 Webhook: Timestamp demasiado antigo (${diffMs}ms). Possível replay.`);
+                return NextResponse.json({ success: true }); // 200 para SISP não retentar
+            }
         }
 
         // 4. Process the Status

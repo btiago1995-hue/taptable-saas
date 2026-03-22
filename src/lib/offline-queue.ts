@@ -55,6 +55,31 @@ export function clearOfflineQueue(): void {
   localStorage.removeItem(OFFLINE_QUEUE_KEY);
 }
 
+const DEAD_LETTER_KEY = "dineo_offline_dead_letter";
+
+export function getDeadLetterQueue(): OfflineOrder[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(DEAD_LETTER_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function moveToDeadLetter(order: OfflineOrder): void {
+  removeFromQueue(order.id);
+  const dl = getDeadLetterQueue();
+  if (!dl.find(o => o.id === order.id)) {
+    dl.push(order);
+    localStorage.setItem(DEAD_LETTER_KEY, JSON.stringify(dl));
+  }
+}
+
+export function clearDeadLetterQueue(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(DEAD_LETTER_KEY);
+}
+
 /** 
  * Syncs all queued offline orders to Supabase.
  * Call this when internet is restored.
@@ -67,7 +92,17 @@ export async function syncOfflineOrders(): Promise<number> {
   console.log(`[OfflineQueue] Syncing ${queue.length} queued order(s)...`);
   let synced = 0;
 
+  const MAX_SYNC_ATTEMPTS = 5;
+
   for (const order of queue) {
+    // Skip ordens que excederam o limite de tentativas
+    if (order.syncAttempts >= MAX_SYNC_ATTEMPTS) {
+      console.warn(`[OfflineQueue] Order ${order.id} excedeu ${MAX_SYNC_ATTEMPTS} tentativas. Marcada como dead_letter.`);
+      // Mover para dead letter: remover da queue normal e guardar separado
+      moveToDeadLetter(order);
+      continue;
+    }
+
     try {
       const response = await fetch("/api/orders/sync", {
         method: "POST",
@@ -80,7 +115,14 @@ export async function syncOfflineOrders(): Promise<number> {
         synced++;
         console.log(`[OfflineQueue] Order ${order.id} synced successfully.`);
       } else {
-        console.warn(`[OfflineQueue] Failed to sync order ${order.id}: ${response.status}`);
+        // Incrementar contador de tentativas
+        const currentQueue = getOfflineQueue();
+        const idx = currentQueue.findIndex(o => o.id === order.id);
+        if (idx !== -1) {
+          currentQueue[idx].syncAttempts += 1;
+          localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(currentQueue));
+        }
+        console.warn(`[OfflineQueue] Failed to sync order ${order.id}: ${response.status} (tentativa ${order.syncAttempts + 1}/${MAX_SYNC_ATTEMPTS})`);
       }
     } catch (err) {
       console.error(`[OfflineQueue] Network error syncing order ${order.id}:`, err);

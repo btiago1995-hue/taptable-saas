@@ -14,11 +14,14 @@
  * Referência: Especificação técnica E-Fatura DNRE, Artigo 8.º
  *
  * NOTA PARA HOMOLOGAÇÃO:
- * Para certificação plena pela DNRE, a função de hash deve ser substituída
- * por assinatura RSA-SHA1 com chave privada emitida pela DNRE.
- * Esta implementação usa HMAC-SHA256 (truncado a 22 chars) para o ambiente
- * de desenvolvimento/homologação, sendo estruturalmente idêntica à produção.
+ * Em produção e sandbox, a função de hash usa assinatura RSA-SHA1 com chave
+ * privada emitida pela DNRE (ver efatura-rsa.ts). Definir EFATURA_ENV e
+ * EFATURA_PRIVATE_KEY no ambiente para activar (ver .env.example).
+ * Em desenvolvimento (EFATURA_ENV=dev ou não definido), usa HMAC-SHA256
+ * truncado a 22 chars — estruturalmente idêntico, sem necessidade de PKI.
  */
+
+import { assinarRSASHA1 } from "./efatura-rsa";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -100,8 +103,9 @@ function formatDataHora(date: Date): string {
  * String de entrada (delimitada por ponto-e-vírgula):
  *   dataHoraEmissao;numeroSequencial;totalBruto;hashAnterior
  *
- * Algoritmo: HMAC-SHA256 com chave derivada do NIF (homologação).
- * Produção: substituir por RSA-SHA1 com certificado DNRE.
+ * Algoritmo (controlado por EFATURA_ENV):
+ *   - dev / não definido → HMAC-SHA256 com chave derivada do NIF (sem PKI)
+ *   - sandbox / production → RSA-SHA1 com chave privada DNRE (EFATURA_PRIVATE_KEY)
  *
  * Retorna os primeiros 22 caracteres do digest em hexadecimal maiúsculo.
  */
@@ -122,7 +126,21 @@ export async function calcularHashDocumento(params: {
     hashAnterior,
   ].join(";");
 
-  // Chave HMAC derivada do NIF (homologação — sem PKI)
+  const efaturaEnv = process.env.EFATURA_ENV;
+
+  // Produção e sandbox: RSA-SHA1 com certificado DNRE
+  if (efaturaEnv === "production" || efaturaEnv === "sandbox") {
+    const privateKeyPem = process.env.EFATURA_PRIVATE_KEY;
+    if (!privateKeyPem) {
+      throw new Error(
+        "EFATURA_PRIVATE_KEY não configurada. Configure a chave privada DNRE."
+      );
+    }
+    return assinarRSASHA1(mensagem, privateKeyPem);
+  }
+
+  // Desenvolvimento (dev / não definido): HMAC-SHA256 com chave derivada do NIF
+  // Estruturalmente idêntico à produção, sem necessidade de PKI.
   const chaveHex = nifEmitente.padEnd(32, "0"); // 32 chars para key material
   const chaveBytes = new TextEncoder().encode(chaveHex);
   const mensagemBytes = new TextEncoder().encode(mensagem);

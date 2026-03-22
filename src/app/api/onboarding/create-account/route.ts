@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { validarNIF } from "@/lib/nif";
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, email, password, restaurantName, plan } = await req.json();
+        const { name, email, password, restaurantName, plan, nif } = await req.json();
 
         if (!name || !email || !password || !restaurantName || !plan) {
             return NextResponse.json({ error: 'Campos obrigatórios em falta.' }, { status: 400 });
+        }
+
+        if (nif !== undefined) {
+            const nifResult = validarNIF(nif);
+            if (!nifResult.valid) {
+                return NextResponse.json({ error: "NIF inválido: " + nifResult.error }, { status: 422 });
+            }
         }
 
         // 1. Criar utilizador via Admin API — sem email de confirmação
@@ -40,7 +48,8 @@ export async function POST(req: NextRequest) {
                 is_active: true,
                 subscription_started_at: new Date().toISOString(),
                 subscription_expires_at: trialExpiresAt.toISOString(),
-                subscription_billing: 'monthly'
+                subscription_billing: 'monthly',
+                ...(nif !== undefined ? { nif_number: nif } : {}),
             }])
             .select('id')
             .single();
