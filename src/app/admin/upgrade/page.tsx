@@ -126,7 +126,11 @@ export default function UpgradePage() {
             </div>
 
             {/* Cards de Upgrade */}
-            <div className={`w-full max-w-2xl grid gap-4 mx-auto ${isTrialExpired ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 justify-items-center"}`}>
+            <div className={isTrialExpired
+                ? "w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-4 mx-auto"
+                : "w-full max-w-sm mx-auto flex flex-col gap-4"
+            }>
+
 
                 {/* Starter → Growth (Self-service) */}
                 {(targetPlan === "growth" || isTrialExpired) && currentPlan === "starter" && (
