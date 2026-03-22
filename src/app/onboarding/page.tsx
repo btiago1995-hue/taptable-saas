@@ -234,78 +234,90 @@ export default function OnboardingWizard() {
 
                             <div className="space-y-4 flex-1">
                                 {/* Plan Card: Starter */}
+                                {/* Plan Card: Starter */}
                                 <label className={cn(
-                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
+                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all",
                                     formData.plan === "starter" ? "border-slate-900 bg-slate-50" : "border-slate-100 bg-white hover:border-slate-300",
                                     formData.plan !== "starter" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
-                                    <div className="flex justify-between items-center mb-1 relative z-10">
-                                        <div className="flex items-center gap-3">
-                                            <input 
-                                                type="radio" 
-                                                name="plan" 
-                                                value="starter" 
-                                                className="w-5 h-5 accent-slate-900 bg-transparent border-slate-300"
-                                                checked={formData.plan === "starter"}
-                                                onChange={() => updateForm('plan', 'starter')}
-                                                disabled={isLoading}
-                                            />
-                                            <span className="font-black text-lg text-slate-900">Starter</span>
+                                    <div className="flex items-start gap-3">
+                                        <input
+                                            type="radio"
+                                            name="plan"
+                                            value="starter"
+                                            className="w-5 h-5 mt-0.5 accent-slate-900 shrink-0"
+                                            checked={formData.plan === "starter"}
+                                            onChange={() => updateForm('plan', 'starter')}
+                                            disabled={isLoading}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-black text-lg text-slate-900">Starter</span>
+                                                <span className="font-black text-slate-700 shrink-0">1.490 CVE</span>
+                                            </div>
+                                            <p className="text-sm font-medium text-slate-500 mt-1">Cardápio QR e Ponto de Venda (Salão).</p>
                                         </div>
-                                        <span className="font-black text-slate-500">1.490 CVE</span>
                                     </div>
-                                    <p className="text-sm font-medium text-slate-500 ml-8 relative z-10 mt-1">Cardápio QR e Ponto de Venda (Salão).</p>
                                 </label>
 
                                 {/* Plan Card: Growth */}
                                 <label className={cn(
-                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
-                                    formData.plan === "growth" ? "border-slate-900 bg-slate-900 text-white shadow-xl scale-[1.02] z-10" : "border-slate-100 bg-white hover:border-slate-300",
+                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all",
+                                    formData.plan === "growth" ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-100 bg-white hover:border-slate-300",
                                     formData.plan !== "growth" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
-                                    <div className={`absolute top-0 right-0 text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl ${formData.plan === "growth" ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500"}`}>Popular</div>
-                                    <div className="flex justify-between items-center mb-1 relative z-10">
-                                        <div className="flex items-center gap-3">
-                                            <input 
-                                                type="radio" 
-                                                name="plan" 
-                                                value="growth" 
-                                                className="w-5 h-5 accent-white bg-transparent border-slate-300"
-                                                checked={formData.plan === "growth"}
-                                                onChange={() => updateForm('plan', 'growth')}
-                                                disabled={isLoading}
-                                            />
-                                            <span className={`font-black text-lg ${formData.plan === "growth" ? "text-white" : "text-slate-900"}`}>Growth</span>
+                                    <div className="flex items-start gap-3">
+                                        <input
+                                            type="radio"
+                                            name="plan"
+                                            value="growth"
+                                            className="w-5 h-5 mt-0.5 accent-white shrink-0"
+                                            checked={formData.plan === "growth"}
+                                            onChange={() => updateForm('plan', 'growth')}
+                                            disabled={isLoading}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`font-black text-lg ${formData.plan === "growth" ? "text-white" : "text-slate-900"}`}>Growth</span>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${formData.plan === "growth" ? "bg-white text-slate-900" : "bg-slate-100 text-slate-500"}`}>Popular</span>
+                                                </div>
+                                                <span className={`font-black shrink-0 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-700"}`}>4.990 CVE</span>
+                                            </div>
+                                            <p className={`text-sm font-medium mt-1 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-500"}`}>KDS, Display de Cobertura e App de Entrega.</p>
                                         </div>
-                                        <span className={`font-black ${formData.plan === "growth" ? "text-slate-300" : "text-slate-500"}`}>4.990 CVE</span>
                                     </div>
-                                    <p className={`text-sm font-medium ml-8 relative z-10 mt-1 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-500"}`}>KDS, Display de Cobertura e App de Entrega.</p>
                                 </label>
 
                                 {/* Plan Card: PRO */}
                                 <label className={cn(
-                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
-                                    formData.plan === "pro" ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900 scale-[1.02] shadow-xl z-10" : "border-slate-100 bg-white hover:border-slate-300",
+                                    "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all",
+                                    formData.plan === "pro" ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900 shadow-xl" : "border-slate-100 bg-white hover:border-slate-300",
                                     formData.plan !== "pro" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
-                                    <div className="absolute top-0 right-0 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Premium</div>
-                                    <div className="flex justify-between items-center mb-1 relative z-10">
-                                        <div className="flex items-center gap-3">
-                                            <input 
-                                                type="radio" 
-                                                name="plan" 
-                                                value="pro" 
-                                                className="w-5 h-5 accent-slate-900 bg-transparent border-slate-300"
-                                                checked={formData.plan === "pro"}
-                                                onChange={() => updateForm('plan', 'pro')}
-                                                disabled={isLoading}
-                                            />
-                                            <span className="font-black text-lg text-slate-900 tracking-wide">PRO</span>
+                                    <div className="flex items-start gap-3">
+                                        <input
+                                            type="radio"
+                                            name="plan"
+                                            value="pro"
+                                            className="w-5 h-5 mt-0.5 accent-slate-900 shrink-0"
+                                            checked={formData.plan === "pro"}
+                                            onChange={() => updateForm('plan', 'pro')}
+                                            disabled={isLoading}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-black text-lg text-slate-900">PRO</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-900 text-white">Premium</span>
+                                                </div>
+                                                <span className="font-black text-slate-700 shrink-0">9.900 CVE</span>
+                                            </div>
+                                            <p className="text-sm font-medium text-slate-500 mt-1">Operações logísticas próprias e DNRE.</p>
                                         </div>
-                                        <span className="font-black text-slate-500">9.900 CVE</span>
                                     </div>
-                                    <p className="text-sm font-medium text-slate-500 ml-8 relative z-10 mt-1">Operações logísticas próprias e DNRE.</p>
                                 </label>
+
                             </div>
 
                             <button
