@@ -18,7 +18,7 @@ export default function OnboardingWizard() {
         email: "",
         password: "",
         restaurantName: "",
-        plan: "growth" // "essential" | "growth" | "elite"
+        plan: "growth" // "starter" | "growth" | "pro"
     });
 
     const updateForm = (key: string, val: string) => {
@@ -52,50 +52,38 @@ export default function OnboardingWizard() {
         setErrorMsg("");
 
         try {
-            // 1. Sign up built-in auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.email,
-                password: formData.password,
+            // 1. Criar conta via API route server-side (sem email rate limit)
+            const res = await fetch('/api/onboarding/create-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    restaurantName: formData.restaurantName,
+                    plan: formData.plan
+                })
             });
-            if (authError) throw authError;
-            if (!authData.user) throw new Error("Erro ao criar utilizador.");
 
-            // 2. Create Restaurant Tenant
-            const { data: restData, error: restErr } = await supabase.from('restaurants')
-                .insert([{ 
-                    name: formData.restaurantName,
-                    subscription_plan: formData.plan
-                }])
-                .select('id')
-                .single();
-            if (restErr) throw restErr;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro ao criar conta.');
 
-            // 3. Create Custom User Profile linking Auth to Tenant
-            const { error: profileErr } = await supabase.from('users').insert([{
-                id: authData.user.id,
-                restaurant_id: restData.id,
-                name: formData.name,
-                role: 'manager',
-                access_modules: ['dashboard', 'cashier', 'kitchen', 'waiter', 'menu', 'customers', 'driver']
-            }]);
-            if (profileErr) throw profileErr;
-
-            // 4. Force sign-in to be double sure
-            await supabase.auth.signInWithPassword({
+            // 2. Fazer sign-in para estabelecer sessão
+            const { error: signInErr } = await supabase.auth.signInWithPassword({
                 email: formData.email,
                 password: formData.password
             });
+            if (signInErr) throw new Error('Conta criada! Faça login manualmente.');
 
-            // Redirect to admin dashboard
+            // 3. Redirecionar para o painel do restaurante correcto
             setTimeout(() => {
                 router.push("/admin/dashboard");
-            }, 1000);
+            }, 800);
 
         } catch (err: any) {
             setErrorMsg(err.message || "Erro durante o registo. Tente novamente.");
             setIsLoading(false);
-            // Revert step to the first one in case we need to retry
-            if (err.message.includes("usado") || err.message.includes("email")) {
+            if (err.message?.toLowerCase().includes('email') || err.message?.includes('e-mail')) {
                 setStep(1);
             }
         }
@@ -245,26 +233,26 @@ export default function OnboardingWizard() {
                             <p className="text-slate-500 font-medium mb-8">Todos os planos incluem 14 dias de teste gratuito.</p>
 
                             <div className="space-y-4 flex-1">
-                                {/* Plan Card: Essencial */}
+                                {/* Plan Card: Starter */}
                                 <label className={cn(
                                     "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
-                                    formData.plan === "essential" ? "border-slate-900 bg-slate-50" : "border-slate-100 bg-white hover:border-slate-300",
-                                    formData.plan !== "essential" && formData.plan ? "opacity-60 hover:opacity-100" : ""
+                                    formData.plan === "starter" ? "border-slate-900 bg-slate-50" : "border-slate-100 bg-white hover:border-slate-300",
+                                    formData.plan !== "starter" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
                                     <div className="flex justify-between items-center mb-1 relative z-10">
                                         <div className="flex items-center gap-3">
                                             <input 
                                                 type="radio" 
                                                 name="plan" 
-                                                value="essential" 
+                                                value="starter" 
                                                 className="w-5 h-5 accent-slate-900 bg-transparent border-slate-300"
-                                                checked={formData.plan === "essential"}
-                                                onChange={() => updateForm('plan', 'essential')}
+                                                checked={formData.plan === "starter"}
+                                                onChange={() => updateForm('plan', 'starter')}
                                                 disabled={isLoading}
                                             />
-                                            <span className="font-black text-lg text-slate-900">Essencial</span>
+                                            <span className="font-black text-lg text-slate-900">Starter</span>
                                         </div>
-                                        <span className="font-black text-slate-500">1.990 CVE</span>
+                                        <span className="font-black text-slate-500">1.490 CVE</span>
                                     </div>
                                     <p className="text-sm font-medium text-slate-500 ml-8 relative z-10 mt-1">Cardápio QR e Ponto de Venda (Salão).</p>
                                 </label>
@@ -294,11 +282,11 @@ export default function OnboardingWizard() {
                                     <p className={`text-sm font-medium ml-8 relative z-10 mt-1 ${formData.plan === "growth" ? "text-slate-300" : "text-slate-500"}`}>KDS, Display de Cobertura e App de Entrega.</p>
                                 </label>
 
-                                {/* Plan Card: Elite */}
+                                {/* Plan Card: PRO */}
                                 <label className={cn(
                                     "flex flex-col border-2 rounded-2xl p-5 cursor-pointer transition-all relative overflow-hidden",
-                                    formData.plan === "elite" ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900 scale-[1.02] shadow-xl z-10" : "border-slate-100 bg-white hover:border-slate-300",
-                                    formData.plan !== "elite" && formData.plan ? "opacity-60 hover:opacity-100" : ""
+                                    formData.plan === "pro" ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900 scale-[1.02] shadow-xl z-10" : "border-slate-100 bg-white hover:border-slate-300",
+                                    formData.plan !== "pro" && formData.plan ? "opacity-60 hover:opacity-100" : ""
                                 )}>
                                     <div className="absolute top-0 right-0 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Premium</div>
                                     <div className="flex justify-between items-center mb-1 relative z-10">
@@ -306,13 +294,13 @@ export default function OnboardingWizard() {
                                             <input 
                                                 type="radio" 
                                                 name="plan" 
-                                                value="elite" 
+                                                value="pro" 
                                                 className="w-5 h-5 accent-slate-900 bg-transparent border-slate-300"
-                                                checked={formData.plan === "elite"}
-                                                onChange={() => updateForm('plan', 'elite')}
+                                                checked={formData.plan === "pro"}
+                                                onChange={() => updateForm('plan', 'pro')}
                                                 disabled={isLoading}
                                             />
-                                            <span className="font-black text-lg text-slate-900 tracking-wide">Elite</span>
+                                            <span className="font-black text-lg text-slate-900 tracking-wide">PRO</span>
                                         </div>
                                         <span className="font-black text-slate-500">9.900 CVE</span>
                                     </div>
