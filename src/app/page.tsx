@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
+import { useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
@@ -35,37 +38,59 @@ const features = [
   },
 ];
 
-const plans = [
+type BillingPeriod = "monthly" | "quarterly" | "annual";
+
+const PLANS = [
   {
-    name: "Essencial",
-    price: "1.990",
+    id: "starter",
+    name: "Starter",
+    price: { monthly: 1490, quarterly: 3990, annual: 14900 },
     desc: "Comece a digitalizar o seu salão hoje.",
-    items: ["Menu QR Code Dinâmico", "Gestão de Mesas", "Ponto de Venda (POS)", "Dashboard Admin", "Equipe até 3 pessoas"],
+    items: ["Menu QR Code Dinâmico", "Gestão de Mesas", "Ponto de Venda (POS)", "Dashboard Admin", "Equipe até 2 pessoas"],
     cta: "Começar Trial",
+    href: "/onboarding?plan=starter",
     highlighted: false,
   },
   {
+    id: "growth",
     name: "Growth",
-    price: "4.990",
+    price: { monthly: 2990, quarterly: 7990, annual: 29900 },
     desc: "O ecossistema completo de restauração.",
-    items: ["Tudo do Essencial", "KDS de Cozinha em Tempo Real", "App do Garçom", "Delivery & Guias de Transporte", "Analytics & CRM Real"],
+    items: ["Tudo do Starter", "KDS de Cozinha em Tempo Real", "App do Garçom", "Delivery \u0026 Guias de Transporte", "Analytics \u0026 CRM Real", "Conta Corrente Clientes", "SISP Vinti4"],
     cta: "Testar 14 Dias Grátis",
+    href: "/onboarding?plan=growth",
     highlighted: true,
   },
   {
-    name: "Elite",
-    price: "9.900",
-    desc: "Operações de alto volume e logística própria.",
-    items: ["Tudo do Growth", "App GPS de Motoboys", "Sistema de Fidelidade", "Notas de Crédito (DNRE)", "Permissões Granulares"],
+    id: "pro",
+    name: "PRO",
+    price: { monthly: 5990, quarterly: 15990, annual: 59900 },
+    desc: "Operações de alto volume e compliance fiscal.",
+    items: ["Tudo do Growth", "SAF-T Export DNRE CV", "Retenções IRS/IRC", "Multi-loja", "Utilizadores Ilimitados", "Suporte Prioritário"],
     cta: "Falar com Comercial",
+    href: "/contacto",
     highlighted: false,
   },
 ];
+
+const BILLING_LABELS: Record<BillingPeriod, string> = {
+  monthly: "Mensal",
+  quarterly: "Trimestral",
+  annual: "Anual",
+};
+
+const BILLING_DISCOUNT: Record<BillingPeriod, string | null> = {
+  monthly: null,
+  quarterly: "Poupa \u223c11%",
+  annual: "2 meses grátis",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
+
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col">
 
@@ -82,6 +107,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500">
               <a href="#features" className="hover:text-slate-900 transition-colors">Funcionalidades</a>
               <a href="#pricing" className="hover:text-slate-900 transition-colors">Preços</a>
+              <Link href="/contacto" className="hover:text-slate-900 transition-colors">Contacto</Link>
               <Link href="/admin/login" className="hover:text-slate-900 transition-colors">Login</Link>
             </div>
             <Link href="/onboarding" className="bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-sm">
@@ -194,16 +220,36 @@ export default function Home() {
         {/* ── PRICING ──────────────────────────────────────────────────────── */}
         <section id="pricing" className="py-24 md:py-32 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
-            <div className="mb-16 max-w-2xl">
+            <div className="mb-10 max-w-2xl">
               <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Preços</p>
               <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-900 mb-4">
                 Um plano para <br />cada restaurante.
               </h2>
-              <p className="text-slate-500 text-lg font-medium">Trial gratuito de 14 dias em todos os planos. Sem cartão exigido.</p>
+              <p className="text-slate-500 text-lg font-medium">Trial gratuito de 14 dias. Sem cartão exigido.</p>
+            </div>
+
+            {/* Billing period toggle */}
+            <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 w-fit mb-12">
+              {(["monthly", "quarterly", "annual"] as BillingPeriod[]).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setBillingPeriod(period)}
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                    billingPeriod === period
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {BILLING_LABELS[period]}
+                  {BILLING_DISCOUNT[period] && (
+                    <span className="ml-1.5 text-[10px] text-[#9333ea] font-black">{BILLING_DISCOUNT[period]}</span>
+                  )}
+                </button>
+              ))}
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {plans.map((plan, i) => (
+              {PLANS.map((plan, i) => (
                 <div
                   key={i}
                   className={`rounded-[2rem] p-8 flex flex-col h-full transition-all border ${
@@ -222,13 +268,17 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                  <div className="mb-3">
-                    <span className={`text-5xl font-black ${plan.highlighted ? "text-white" : "text-slate-900"}`}>{plan.price}</span>
-                    <span className={`text-sm ml-2 font-medium ${plan.highlighted ? "text-slate-400" : "text-slate-500"}`}>CVE/mês</span>
+                  <div className="mb-1">
+                    <span className={`text-5xl font-black ${plan.highlighted ? "text-white" : "text-slate-900"}`}>
+                      {plan.price[billingPeriod].toLocaleString("pt-CV")}
+                    </span>
+                    <span className={`text-sm ml-2 font-medium ${plan.highlighted ? "text-slate-400" : "text-slate-500"}`}>
+                      CVE/{billingPeriod === "monthly" ? "mês" : billingPeriod === "quarterly" ? "trim." : "ano"}
+                    </span>
                   </div>
-                  <p className={`text-sm mb-8 font-medium ${plan.highlighted ? "text-slate-300" : "text-slate-500"}`}>{plan.desc}</p>
+                  <p className={`text-sm mb-8 font-medium mt-2 ${plan.highlighted ? "text-slate-300" : "text-slate-500"}`}>{plan.desc}</p>
                   <Link
-                    href="/onboarding"
+                    href={plan.href}
                     className={`w-full text-center font-bold py-3.5 rounded-full text-sm transition-opacity mb-8 hover:opacity-90 ${
                       plan.highlighted
                         ? "bg-gradient-to-r from-[#9333ea] to-[#facc15] text-white shadow-md"

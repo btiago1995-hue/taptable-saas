@@ -19,6 +19,8 @@ export interface User {
         vinti4PosId?: string;
         vinti4PosAutCode?: string;
         subscriptionPlan?: string;
+        subscriptionBilling?: string;
+        subscriptionExpiresAt?: string;
     };
     subscriptionPlan?: string;
     isRestaurantActive: boolean;
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Fetch custom profile linked to the Supabase Auth User
                 const { data: profile, error } = await supabase
                     .from('users')
-                    .select('*, restaurants(name, is_active, nif_number, address, vinti4_pos_id, vinti4_pos_aut_code, subscription_plan)')
+                    .select('*, restaurants(name, is_active, nif_number, address, vinti4_pos_id, vinti4_pos_aut_code, subscription_plan, subscription_billing, subscription_expires_at)')
                     .eq('id', sessionUser.id)
                     .single();
 
@@ -68,9 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             address: profile.restaurants?.address,
                             vinti4PosId: profile.restaurants?.vinti4_pos_id,
                             vinti4PosAutCode: profile.restaurants?.vinti4_pos_aut_code,
-                            subscriptionPlan: profile.restaurants?.subscription_plan || 'growth',
+                            subscriptionPlan: profile.restaurants?.subscription_plan || 'starter',
+                            subscriptionBilling: profile.restaurants?.subscription_billing || 'monthly',
+                            subscriptionExpiresAt: profile.restaurants?.subscription_expires_at,
                         },
-                        subscriptionPlan: profile.restaurants?.subscription_plan || 'growth',
+                        subscriptionPlan: profile.restaurants?.subscription_plan || 'starter',
                         isRestaurantActive: profile.restaurants?.is_active ?? true,
                         accessModules: profile.access_modules || []
                     });
