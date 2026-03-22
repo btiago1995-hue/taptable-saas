@@ -114,8 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
-    // Prevent hydration mismatch and ensure we don't render protected routes until we check the session
-    if (!isLoaded) return null;
+    // Mostrar spinner enquanto verifica sessão — evita tela branca que parece erro de ligação
+    if (!isLoaded) return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+                <p className="text-sm text-slate-400 font-medium">A carregar...</p>
+            </div>
+        </div>
+    );
+
 
     return (
         <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading: !isLoaded, logout }}>

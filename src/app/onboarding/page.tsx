@@ -51,6 +51,12 @@ export default function OnboardingWizard() {
         setIsLoading(true);
         setErrorMsg("");
 
+        // Timeout de segurança: 25 segundos máximo
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+            setErrorMsg("O servidor demorou demasiado a responder. Verifique a sua ligação e tente novamente.");
+        }, 25000);
+
         try {
             // 1. Criar conta via API route server-side (sem email rate limit)
             const res = await fetch('/api/onboarding/create-account', {
@@ -73,17 +79,24 @@ export default function OnboardingWizard() {
                 email: formData.email,
                 password: formData.password
             });
-            if (signInErr) throw new Error('Conta criada! Faça login manualmente.');
 
-            // 3. Redirecionar para o painel do restaurante correcto
-            setTimeout(() => {
-                router.push("/admin/dashboard");
-            }, 800);
+            clearTimeout(timeout);
+
+            if (signInErr) {
+                // Conta foi criada mas a sessão não estabeleceu — redirecionar para login
+                router.push(`/login?email=${encodeURIComponent(formData.email)}&created=true`);
+                return;
+            }
+
+            // 3. Redirecionar para o painel
+            router.push("/admin/dashboard");
 
         } catch (err: any) {
+            clearTimeout(timeout);
             setErrorMsg(err.message || "Erro durante o registo. Tente novamente.");
             setIsLoading(false);
-            if (err.message?.toLowerCase().includes('email') || err.message?.includes('e-mail')) {
+            // Se o erro menciona email, voltar ao step 1
+            if (err.message?.toLowerCase().includes('email') || err.message?.includes('e-mail') || err.message?.includes('registad')) {
                 setStep(1);
             }
         }
@@ -189,7 +202,10 @@ export default function OnboardingWizard() {
                     {/* STEP 2: Restaurant Details */}
                     {step === 2 && (
                         <div className="flex flex-col flex-1 animate-in slide-in-from-right-8 fade-in duration-500">
-                            <button onClick={() => setStep(1)} className="absolute -top-2 -left-2 p-2 text-slate-400 hover:text-slate-900 transition-colors flex items-center gap-1 font-bold text-sm">
+                            <button
+                                onClick={() => setStep(1)}
+                                className="mb-4 self-start flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors font-bold text-sm"
+                            >
                                 <ArrowLeft className="w-4 h-4" /> Voltar
                             </button>
                             
@@ -224,8 +240,12 @@ export default function OnboardingWizard() {
 
                     {/* STEP 3: Plan Selection */}
                     {step === 3 && (
-                        <div className="flex flex-col flex-1 animate-in slide-in-from-right-8 fade-in duration-500 max-h-[600px] overflow-y-auto no-scrollbar">
-                            <button onClick={() => setStep(2)} className="absolute -top-2 -left-2 p-2 text-slate-400 hover:text-slate-900 transition-colors flex items-center gap-1 font-bold text-sm" disabled={isLoading}>
+                        <div className="flex flex-col flex-1 animate-in slide-in-from-right-8 fade-in duration-500">
+                            <button
+                                onClick={() => setStep(2)}
+                                className="mb-4 self-start flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors font-bold text-sm"
+                                disabled={isLoading}
+                            >
                                 <ArrowLeft className="w-4 h-4" /> Voltar
                             </button>
                             
