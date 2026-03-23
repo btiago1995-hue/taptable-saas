@@ -166,11 +166,12 @@ export async function recordPaymentOnInvoice(params: {
 // ─── Cron: verificar e processar contas vencidas ───────────────────────────
 
 export interface OverdueResult {
-  movedToPastDue:  string[];   // restaurant ids
+  movedToPastDue:  string[];   // restaurant ids — acabaram de entrar em past_due (dunning dia 1)
   suspended:       string[];   // restaurant ids
   reminders7d:     string[];   // restaurant ids
   reminders3d:     string[];   // restaurant ids
   reminders1d:     string[];   // restaurant ids
+  dunning3d:       string[];   // restaurant ids — past_due há ~3 dias (graceEnd a ~2 dias)
 }
 
 export async function checkAndProcessOverdue(): Promise<OverdueResult> {
@@ -178,6 +179,7 @@ export async function checkAndProcessOverdue(): Promise<OverdueResult> {
   const result: OverdueResult = {
     movedToPastDue: [], suspended: [],
     reminders7d: [], reminders3d: [], reminders1d: [],
+    dunning3d: [],
   };
 
   const { data: restaurants } = await supabaseAdmin
@@ -198,6 +200,15 @@ export async function checkAndProcessOverdue(): Promise<OverdueResult> {
         .update({ subscription_status: "suspended", is_active: false })
         .eq("id", r.id);
       result.suspended.push(r.id);
+      continue;
+    }
+
+    // Dunning dia 3: past_due há ~3 dias (graceEnd a ~2 dias)
+    if (status === "past_due" && graceEnd) {
+      const daysUntilSuspension = Math.ceil((graceEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntilSuspension === 2) {
+        result.dunning3d.push(r.id);
+      }
       continue;
     }
 

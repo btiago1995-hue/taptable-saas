@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAndProcessOverdue } from "@/lib/billing";
-import { sendRenewalReminder, sendSuspensionNotice } from "@/lib/email";
+import { sendRenewalReminder, sendSuspensionNotice, sendDunningEmail } from "@/lib/email";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -23,6 +23,16 @@ export async function GET(req: NextRequest) {
     // Enviar emails para contas suspensas
     if (result.suspended.length > 0) {
       await sendEmailsForRestaurants(result.suspended, "suspended");
+    }
+
+    // Dunning dia 1 — acabaram de entrar em past_due
+    if (result.movedToPastDue.length > 0) {
+      await sendEmailsForRestaurants(result.movedToPastDue, "dunning", 5);
+    }
+
+    // Dunning dia 3 — past_due há ~3 dias, suspensão em ~2 dias
+    if (result.dunning3d.length > 0) {
+      await sendEmailsForRestaurants(result.dunning3d, "dunning", 2);
     }
 
     // Enviar lembretes de renovação
@@ -61,7 +71,7 @@ export async function GET(req: NextRequest) {
 
 async function sendEmailsForRestaurants(
   restaurantIds: string[],
-  type: "suspended" | "reminder",
+  type: "suspended" | "reminder" | "dunning",
   daysLeft?: number
 ) {
   // Buscar emails dos managers de cada restaurante
@@ -87,17 +97,28 @@ async function sendEmailsForRestaurants(
       const email = authUser?.user?.email;
       if (!email) continue;
 
+      const { BILLING_AMOUNTS } = await import("@/lib/billing");
+      const plan       = rest.subscription_plan || "starter";
+      const planLabel  = plan.charAt(0).toUpperCase() + plan.slice(1);
+      const amount     = BILLING_AMOUNTS[plan]?.monthly ?? 1490;
+
       if (type === "suspended") {
         await sendSuspensionNotice({ to: email, restaurantName: rest.name });
+      } else if (type === "dunning" && daysLeft !== undefined) {
+        await sendDunningEmail({
+          to:                  email,
+          restaurantName:      rest.name,
+          plan:                planLabel,
+          amount,
+          daysUntilSuspension: daysLeft,
+        });
       } else if (type === "reminder" && daysLeft !== undefined) {
-        const { BILLING_AMOUNTS } = await import("@/lib/billing");
-        const plan = rest.subscription_plan || "starter";
         await sendRenewalReminder({
           to:             email,
           restaurantName: rest.name,
           daysLeft,
-          plan:           plan.charAt(0).toUpperCase() + plan.slice(1),
-          amount:         BILLING_AMOUNTS[plan]?.monthly ?? 1490,
+          plan:           planLabel,
+          amount,
           expiresAt:      rest.subscription_expires_at || new Date().toISOString(),
         });
       }

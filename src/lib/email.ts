@@ -227,6 +227,69 @@ export async function sendContactLeadInternal(params: {
   });
 }
 
+// ─── Dunning — recuperação de pagamento em atraso ─────────────────────────
+//
+// Enviado durante o grace period de 5 dias (past_due):
+//   daysUntilSuspension = 5 → Dia 1 — aviso inicial (tom: informativo)
+//   daysUntilSuspension = 2 → Dia 3 — urgente (tom: urgente)
+//   Dia 5 → conta suspensa → sendSuspensionNotice (já existe)
+
+export async function sendDunningEmail(params: {
+  to:                   string;
+  restaurantName:       string;
+  plan:                 string;
+  amount:               number;
+  daysUntilSuspension:  number;  // 5 = dia 1, 2 = dia 3
+}): Promise<void> {
+  const { to, restaurantName, plan, amount, daysUntilSuspension } = params;
+  const billingUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://dineo.cv") + "/admin/billing";
+
+  const isDay1 = daysUntilSuspension >= 4;
+  const subject = isDay1
+    ? `Pagamento em atraso — o acesso ao Dineo será suspenso em ${daysUntilSuspension} dias`
+    : `Urgente: a sua conta Dineo será suspensa em ${daysUntilSuspension} dia${daysUntilSuspension > 1 ? "s" : ""}`;
+
+  const headerBg    = isDay1 ? "#fffbeb" : "#fef2f2";
+  const headerBdr   = isDay1 ? "#fde68a" : "#fecaca";
+  const headerColor = isDay1 ? "#b45309" : "#dc2626";
+  const headerLabel = isDay1
+    ? `Pagamento em atraso — ${daysUntilSuspension} dias até suspensão`
+    : `Suspensão em ${daysUntilSuspension} dia${daysUntilSuspension > 1 ? "s" : ""}!`;
+
+  const bodyText = isDay1
+    ? `Não foi possível confirmar o pagamento da subscrição de <strong>${restaurantName}</strong>.<br/>
+       Para manter o acesso a todos os dados e funcionalidades, efectue o pagamento nos próximos <strong>${daysUntilSuspension} dias</strong>.`
+    : `A conta de <strong>${restaurantName}</strong> será suspensa <strong>em ${daysUntilSuspension} dia${daysUntilSuspension > 1 ? "s" : ""}</strong>.<br/>
+       Após a suspensão, o acesso ao painel fica bloqueado (os seus dados ficam preservados).`;
+
+  await sendEmail({
+    to,
+    subject,
+    html: baseTemplate(`
+      <div style="background:${headerBg};border:1px solid ${headerBdr};border-radius:12px;padding:16px 20px;margin-bottom:24px">
+        <p style="margin:0;font-weight:900;font-size:15px;color:${headerColor}">${headerLabel}</p>
+      </div>
+      <h2 style="font-size:20px;font-weight:800;margin:0 0 12px">${subject}</h2>
+      <p style="color:#475569;margin:0 0 20px;font-size:14px;line-height:1.6">${bodyText}</p>
+      <div style="background:#f8fafc;border-radius:12px;padding:18px;margin-bottom:24px">
+        <div style="font-size:13px;color:#64748b;margin-bottom:4px">Plano</div>
+        <div style="font-weight:700;font-size:16px">${plan} · ${amount.toLocaleString("pt-PT")} CVE/mês</div>
+      </div>
+      <p style="font-size:14px;color:#475569;margin:0 0 16px">
+        Para regularizar, aceda ao painel de faturação e efectue o pagamento via Vinti4 ou transferência bancária:
+      </p>
+      <div style="text-align:center;margin-bottom:20px">
+        <a href="${billingUrl}" style="display:inline-block;background:#dc2626;color:#fff;font-weight:800;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none">
+          Regularizar agora →
+        </a>
+      </div>
+      <p style="color:#94a3b8;font-size:12px;text-align:center">
+        Dúvidas? <a href="mailto:suporte@dineo.cv" style="color:#64748b">suporte@dineo.cv</a>
+      </p>
+    `),
+  });
+}
+
 // ─── Lembrete de renovação ─────────────────────────────────────────────────
 
 export async function sendRenewalReminder(params: {
