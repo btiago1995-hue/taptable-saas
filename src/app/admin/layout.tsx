@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle, Truck } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
@@ -105,7 +105,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
 
         if (isManager || mods.includes("waiter")) links.push({ name: "Painel Garçom", href: "/admin/waiter", icon: Users });
-        if (isManager || mods.includes("driver")) links.push({ name: "Gestão de Entregas", href: "/admin/delivery", icon: Truck });
         if (isManager || mods.includes("menu")) links.push({ name: "Cardápio", href: "/admin/menu", icon: Store });
         if (isManager || mods.includes("dashboard")) links.push({ name: "Equipe", href: "/admin/staff", icon: UserCog });
 
