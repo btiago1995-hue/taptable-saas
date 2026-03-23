@@ -6,7 +6,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import {
   Store, AlertTriangle, Loader2, TrendingUp, ShoppingBag,
   Clock, CheckCircle2, XCircle, ChevronRight, Plus, Search,
-  CalendarPlus,
+  CalendarPlus, CreditCard,
 } from "lucide-react";
 
 // ─── Planos ────────────────────────────────────────────────────────────────
@@ -39,10 +39,20 @@ interface TenantRestaurant {
   subscription_plan?: string;
   subscription_billing?: string;
   subscription_expires_at?: string;
+  subscription_status?: string;
   total_orders?: number;
   gmv?: number;
   lastOrderAt?: string | null;
   daysUntilExpiry?: number | null;
+}
+
+interface PaymentForm {
+  restaurantId:   string;
+  restaurantName: string;
+  amount:         string;
+  method:         string;
+  reference:      string;
+  notes:          string;
 }
 
 interface CreateForm {
@@ -77,6 +87,14 @@ function normalizePlan(plan?: string): "starter" | "growth" | "pro" {
   return "starter";
 }
 
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  trial:     { label: "Trial",     cls: "bg-blue-50 text-blue-700 border-blue-200"     },
+  active:    { label: "Ativo",     cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  past_due:  { label: "Em Atraso", cls: "bg-amber-100 text-amber-800 border-amber-300" },
+  suspended: { label: "Suspenso",  cls: "bg-rose-50 text-rose-700 border-rose-200"     },
+  cancelled: { label: "Cancelado", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+};
+
 function formatLastOrder(date?: string | null): string {
   if (!date) return "—";
   const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
@@ -98,6 +116,9 @@ export default function SuperAdminDashboard() {
   const [form,        setForm]        = useState<CreateForm>(EMPTY_FORM);
   const [isCreating,  setIsCreating]  = useState(false);
   const [createError, setCreateError] = useState("");
+  const [paymentForm, setPaymentForm] = useState<PaymentForm | null>(null);
+  const [isPayment,   setIsPayment]   = useState(false);
+  const [paymentError,setPaymentError]= useState("");
 
   useEffect(() => { fetchRestaurants(); }, []);
 
@@ -107,7 +128,7 @@ export default function SuperAdminDashboard() {
 
       const { data: restData, error: restError } = await supabase
         .from("restaurants")
-        .select("id, name, slug, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at");
+        .select("id, name, slug, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at, subscription_status");
 
       if (restError) throw restError;
 
@@ -132,10 +153,11 @@ export default function SuperAdminDashboard() {
 
       const enriched: TenantRestaurant[] = (restData || []).map((r: any) => ({
         ...r,
-        total_orders:    orderStats[r.id]?.count       || 0,
-        gmv:             orderStats[r.id]?.gmv         || 0,
-        lastOrderAt:     orderStats[r.id]?.lastOrderAt || null,
-        daysUntilExpiry: getDaysUntilExpiry(r.subscription_expires_at),
+        total_orders:      orderStats[r.id]?.count       || 0,
+        gmv:               orderStats[r.id]?.gmv         || 0,
+        lastOrderAt:       orderStats[r.id]?.lastOrderAt || null,
+        daysUntilExpiry:   getDaysUntilExpiry(r.subscription_expires_at),
+        subscription_status: r.subscription_status || "trial",
       }));
 
       enriched.sort((a, b) => (b.gmv || 0) - (a.gmv || 0));
@@ -217,6 +239,50 @@ export default function SuperAdminDashboard() {
     } catch (err: any) {
       alert("Erro: " + err.message);
     } finally { setIsToggling(null); }
+  };
+
+  const openPaymentModal = (r: TenantRestaurant) => {
+    const plan    = r.subscription_plan || "starter";
+    const billing = r.subscription_billing || "monthly";
+    const amounts: Record<string, Record<string, number>> = {
+      starter: { monthly: 1490, quarterly: 3990,  annual: 14900 },
+      growth:  { monthly: 2990, quarterly: 7990,  annual: 29900 },
+      pro:     { monthly: 5990, quarterly: 15990, annual: 59900 },
+    };
+    setPaymentForm({
+      restaurantId:   r.id,
+      restaurantName: r.name,
+      amount:         String(amounts[plan]?.[billing] ?? 1490),
+      method:         "manual",
+      reference:      "",
+      notes:          "",
+    });
+    setPaymentError("");
+  };
+
+  const submitPayment = async () => {
+    if (!paymentForm) return;
+    try {
+      setIsPayment(true);
+      setPaymentError("");
+      const res = await fetch("/api/billing/record-payment", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          restaurantId: paymentForm.restaurantId,
+          amount:       Number(paymentForm.amount),
+          method:       paymentForm.method,
+          reference:    paymentForm.reference || undefined,
+          notes:        paymentForm.notes     || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setPaymentError(data.error || "Erro desconhecido."); return; }
+      setPaymentForm(null);
+      await fetchRestaurants();
+    } catch (err: any) {
+      setPaymentError(err.message);
+    } finally { setIsPayment(false); }
   };
 
   const createRestaurant = async () => {
@@ -423,7 +489,7 @@ export default function SuperAdminDashboard() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100">
-                      {["Restaurante", "MRR", "Pedidos", "GMV", "Plano", "Faturação", "Subscrição", "Últ. Pedido", "Estado", ""].map(h => (
+                      {["Restaurante", "MRR", "Pedidos", "GMV", "Plano", "Faturação", "Subscrição", "Últ. Pedido", "Billing", "Estado", ""].map(h => (
                         <th key={h} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -431,7 +497,7 @@ export default function SuperAdminDashboard() {
                   <tbody className="divide-y divide-slate-50">
                     {filteredRestaurants.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-6 py-14 text-center text-slate-400 text-sm font-medium">
+                        <td colSpan={11} className="px-6 py-14 text-center text-slate-400 text-sm font-medium">
                           {searchTerm ? "Nenhum resultado para a pesquisa." : "Nenhum restaurante registado."}
                         </td>
                       </tr>
@@ -528,7 +594,23 @@ export default function SuperAdminDashboard() {
                             </span>
                           </td>
 
-                          {/* Estado */}
+                          {/* Billing Status */}
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const s = r.subscription_status || "trial";
+                              const b = STATUS_BADGE[s] ?? STATUS_BADGE["trial"];
+                              return (
+                                <span className={cn(
+                                  "inline-flex items-center text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border",
+                                  b.cls
+                                )}>
+                                  {b.label}
+                                </span>
+                              );
+                            })()}
+                          </td>
+
+                          {/* Estado (acesso) */}
                           <td className="px-5 py-4">
                             {r.is_active ? (
                               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -541,22 +623,32 @@ export default function SuperAdminDashboard() {
                             )}
                           </td>
 
-                          {/* Ação */}
+                          {/* Ações */}
                           <td className="px-5 py-4 text-right">
-                            <button
-                              disabled={isToggling === r.id}
-                              onClick={() => toggleAccess(r.id, r.is_active)}
-                              className={cn(
-                                "text-xs font-bold px-3 py-2 rounded-lg border transition-all disabled:opacity-40 whitespace-nowrap",
-                                r.is_active
-                                  ? "bg-white text-rose-600 border-slate-200 hover:border-rose-300 hover:bg-rose-50"
-                                  : "bg-slate-900 text-white border-transparent hover:bg-slate-700"
-                              )}
-                            >
-                              {isToggling === r.id
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : r.is_active ? "Suspender" : "Restaurar"}
-                            </button>
+                            <div className="flex items-center gap-2 justify-end">
+                              <button
+                                onClick={() => openPaymentModal(r)}
+                                className="flex items-center gap-1 text-xs font-bold px-2.5 py-2 rounded-lg border border-slate-200 text-slate-600 bg-white hover:border-slate-400 hover:bg-slate-50 transition-all whitespace-nowrap"
+                                title="Registar pagamento"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                Pagar
+                              </button>
+                              <button
+                                disabled={isToggling === r.id}
+                                onClick={() => toggleAccess(r.id, r.is_active)}
+                                className={cn(
+                                  "text-xs font-bold px-3 py-2 rounded-lg border transition-all disabled:opacity-40 whitespace-nowrap",
+                                  r.is_active
+                                    ? "bg-white text-rose-600 border-slate-200 hover:border-rose-300 hover:bg-rose-50"
+                                    : "bg-slate-900 text-white border-transparent hover:bg-slate-700"
+                                )}
+                              >
+                                {isToggling === r.id
+                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  : r.is_active ? "Suspender" : "Restaurar"}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -579,6 +671,79 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Modal Registar Pagamento ──────────────────────────────────────── */}
+      {paymentForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setPaymentForm(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-black text-slate-900">Registar Pagamento</h2>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">{paymentForm.restaurantName}</p>
+              </div>
+              <button onClick={() => setPaymentForm(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <FormField
+                label="Valor (CVE) *"
+                value={paymentForm.amount}
+                onChange={v => setPaymentForm(f => f ? { ...f, amount: v } : f)}
+                placeholder="2990"
+              />
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Método *</label>
+                <select
+                  value={paymentForm.method}
+                  onChange={e => setPaymentForm(f => f ? { ...f, method: e.target.value } : f)}
+                  className="w-full border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg px-3 py-2.5 outline-none focus:border-slate-400"
+                >
+                  <option value="manual">Manual (transferência / dinheiro)</option>
+                  <option value="vinti4">Vinti4Net</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </div>
+              <FormField
+                label="Referência"
+                value={paymentForm.reference}
+                onChange={v => setPaymentForm(f => f ? { ...f, reference: v } : f)}
+                placeholder="Ref. transferência ou nota"
+              />
+              <FormField
+                label="Notas"
+                value={paymentForm.notes}
+                onChange={v => setPaymentForm(f => f ? { ...f, notes: v } : f)}
+                placeholder="Informação adicional (opcional)"
+              />
+              {paymentError && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-700 font-medium">
+                  {paymentError}
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setPaymentForm(null)}
+                className="text-sm font-semibold px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={submitPayment}
+                disabled={isPayment}
+                className="flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors disabled:opacity-50"
+              >
+                {isPayment
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <CreditCard className="w-4 h-4" />}
+                Confirmar Pagamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal Novo Restaurante ─────────────────────────────────────────── */}
       {showCreate && (

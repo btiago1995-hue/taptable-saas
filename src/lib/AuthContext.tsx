@@ -12,18 +12,20 @@ export interface User {
     role: UserRole;
     restaurantId: string;
     restaurantName?: string;
-    restaurantData?: { 
-        name?: string; 
-        nif?: string; 
+    restaurantData?: {
+        name?: string;
+        nif?: string;
         address?: string;
         vinti4PosId?: string;
         vinti4PosAutCode?: string;
         subscriptionPlan?: string;
         subscriptionBilling?: string;
         subscriptionExpiresAt?: string;
+        subscriptionStatus?: string;
     };
     subscriptionPlan?: string;
     subscriptionExpiresAt?: string;
+    subscriptionStatus?: string;
     isRestaurantActive: boolean;
     accessModules: string[];
 }
@@ -53,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Fetch custom profile linked to the Supabase Auth User
                 const { data: profile, error } = await supabase
                     .from('users')
-                    .select('*, restaurants(name, is_active, nif_number, address, vinti4_pos_id, vinti4_pos_aut_code, subscription_plan, subscription_billing, subscription_expires_at)')
+                    .select('*, restaurants(name, is_active, nif_number, address, vinti4_pos_id, vinti4_pos_aut_code, subscription_plan, subscription_billing, subscription_expires_at, subscription_status)')
                     .eq('id', sessionUser.id)
                     .single();
 
@@ -74,9 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             subscriptionPlan: profile.restaurants?.subscription_plan || 'starter',
                             subscriptionBilling: profile.restaurants?.subscription_billing || 'monthly',
                             subscriptionExpiresAt: profile.restaurants?.subscription_expires_at,
+                            subscriptionStatus: profile.restaurants?.subscription_status || 'trial',
                         },
                         subscriptionPlan: profile.restaurants?.subscription_plan || 'starter',
                         subscriptionExpiresAt: profile.restaurants?.subscription_expires_at || undefined,
+                        subscriptionStatus: profile.restaurants?.subscription_status || 'trial',
                         isRestaurantActive: profile.restaurants?.is_active ?? true,
                         accessModules: profile.access_modules || []
                     });
