@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
@@ -14,6 +14,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter();
     const { user, isAuthenticated, logout } = useAuth();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [showStoreSwitcher, setShowStoreSwitcher] = useState(false);
+    const { switchRestaurant } = useAuth();
 
     // Load initial collapse state from localStorage
     useEffect(() => {
@@ -200,9 +202,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <Store className="w-6 h-6" />
                     </div>
                     {!isSidebarCollapsed && (
-                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 truncate">
+                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 truncate flex-1 min-w-0">
                             <h2 className="font-extrabold text-xl text-slate-900 tracking-tight truncate">{user?.restaurantName || "Restaurante"}</h2>
                             <p className="text-xs font-medium text-slate-500 capitalize">{user?.role === "manager" ? "Gerência" : user?.role === "waiter" ? "Salão" : "Cozinha"}</p>
+                        </div>
+                    )}
+                    {/* Multi-store switcher — só aparece quando há >1 unidade */}
+                    {!isSidebarCollapsed && (user?.availableRestaurants?.length ?? 0) > 1 && (
+                        <div className="relative ml-1 shrink-0">
+                            <button
+                                onClick={() => setShowStoreSwitcher(v => !v)}
+                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                                title="Trocar unidade"
+                            >
+                                <ChevronDown className={cn("w-4 h-4 transition-transform", showStoreSwitcher && "rotate-180")} />
+                            </button>
+                            {showStoreSwitcher && (
+                                <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 min-w-[200px] py-1 animate-in fade-in zoom-in-95 duration-150">
+                                    <p className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unidades</p>
+                                    {user?.availableRestaurants?.map(r => (
+                                        <button
+                                            key={r.id}
+                                            onClick={async () => {
+                                                setShowStoreSwitcher(false);
+                                                await switchRestaurant(r.id);
+                                            }}
+                                            className={cn(
+                                                "w-full text-left px-3 py-2 text-sm font-medium transition-colors",
+                                                r.id === user.restaurantId
+                                                    ? "text-primary-700 bg-primary-50"
+                                                    : "text-slate-700 hover:bg-slate-50"
+                                            )}
+                                        >
+                                            {r.name}
+                                            {r.id === user.restaurantId && (
+                                                <span className="ml-2 text-[10px] text-primary-500 font-bold">●</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

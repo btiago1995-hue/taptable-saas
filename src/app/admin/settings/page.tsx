@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer, CreditCard, CalendarClock, BadgeDollarSign, Clock, Loader2, FileText } from "lucide-react";
+import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer, CreditCard, CalendarClock, BadgeDollarSign, Clock, Loader2, FileText, Plus, Building2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -23,7 +23,11 @@ export default function AdminSettings() {
 function SettingsContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
-    const tabs = ["Geral", "Pagamentos & Gorjetas", "Links & QR Codes", "Avaliações & Google", "Assinatura SaaS"];
+    const plan = normalizePlan(user?.restaurantData?.subscriptionPlan);
+    const tabs = [
+        "Geral", "Pagamentos & Gorjetas", "Links & QR Codes", "Avaliações & Google", "Assinatura SaaS",
+        ...(hasFeature(plan, 'multi_store') ? ["Unidades"] : []),
+    ];
     const [activeTab, setActiveTab] = useState("Geral");
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -49,6 +53,13 @@ function SettingsContent() {
     const [deliveryQr, setDeliveryQr] = useState<{url: string, link: string} | null>(null);
     const [invoices, setInvoices] = useState<any[]>([]);
     const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+    // Unidades (multi-store)
+    const [newLocationName, setNewLocationName] = useState("");
+    const [newLocationNif, setNewLocationNif] = useState("");
+    const [newLocationAddress, setNewLocationAddress] = useState("");
+    const [addingLocation, setAddingLocation] = useState(false);
+    const [addLocationSuccess, setAddLocationSuccess] = useState(false);
 
     // Carregar faturas quando o tab de Assinatura está activo
     useEffect(() => {
@@ -192,6 +203,38 @@ function SettingsContent() {
             alert(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade Dineo, configure as chaves mestras SISP no servidor.)");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleAddLocation = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAddingLocation(true);
+        try {
+            const session = await supabase.auth.getSession();
+            const token = session.data.session?.access_token;
+            const res = await fetch("/api/restaurants/add-location", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ name: newLocationName, nif: newLocationNif, address: newLocationAddress }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                throw new Error(d.error || "Erro ao criar unidade");
+            }
+            setNewLocationName("");
+            setNewLocationNif("");
+            setNewLocationAddress("");
+            setAddLocationSuccess(true);
+            setTimeout(() => setAddLocationSuccess(false), 4000);
+            // Reload page so AuthContext picks up the new restaurant
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setAddingLocation(false);
         }
     };
 
@@ -640,6 +683,93 @@ function SettingsContent() {
                                         </table>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "Unidades" && (
+                        <div className="space-y-6 animate-in fade-in">
+                            {/* Lista de unidades */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+                                <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2">
+                                    <Building2 className="w-5 h-5 text-primary-600" />
+                                    <h3 className="font-bold text-lg text-slate-800">As suas unidades</h3>
+                                </div>
+                                <div className="divide-y divide-slate-50">
+                                    {(user?.availableRestaurants || []).map(r => (
+                                        <div key={r.id} className="px-6 py-4 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                                                    <Store className="w-4 h-4 text-primary-600" />
+                                                </div>
+                                                <span className="font-semibold text-slate-800">{r.name}</span>
+                                            </div>
+                                            {r.id === user?.restaurantId && (
+                                                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
+                                                    Activa
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Adicionar nova unidade */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+                                <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2">
+                                    <Plus className="w-5 h-5 text-primary-600" />
+                                    <h3 className="font-bold text-lg text-slate-800">Adicionar nova unidade</h3>
+                                </div>
+                                <form onSubmit={handleAddLocation} className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Nome da Unidade *</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={newLocationName}
+                                            onChange={e => setNewLocationName(e.target.value)}
+                                            placeholder="Ex: Restaurante Centro"
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">NIF</label>
+                                            <input
+                                                type="text"
+                                                value={newLocationNif}
+                                                onChange={e => setNewLocationNif(e.target.value)}
+                                                placeholder="000000000"
+                                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-300"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Morada</label>
+                                            <input
+                                                type="text"
+                                                value={newLocationAddress}
+                                                onChange={e => setNewLocationAddress(e.target.value)}
+                                                placeholder="Rua, nº, cidade"
+                                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                                            />
+                                        </div>
+                                    </div>
+                                    {addLocationSuccess && (
+                                        <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
+                                            <CheckCircle2 className="w-4 h-4" /> Unidade criada com sucesso!
+                                        </div>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={addingLocation}
+                                        className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+                                    >
+                                        {addingLocation
+                                            ? <><Loader2 className="w-4 h-4 animate-spin" /> A criar...</>
+                                            : <><Plus className="w-4 h-4" /> Criar Unidade</>
+                                        }
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     )}
