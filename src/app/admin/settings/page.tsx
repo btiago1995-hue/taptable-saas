@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer, CreditCard, CalendarClock, BadgeDollarSign } from "lucide-react";
+import { Save, QrCode, Percent, Link as LinkIcon, Store, AlertCircle, CheckCircle2, Printer, CreditCard, CalendarClock, BadgeDollarSign, Clock, Loader2, FileText } from "lucide-react";
 import QRCode from "qrcode";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -47,6 +47,19 @@ function SettingsContent() {
     const [googleLink, setGoogleLink] = useState("https://g.page/r/dineo/review");
     const [qrCodes, setQrCodes] = useState<{ table: number, url: string, link: string }[]>([]);
     const [deliveryQr, setDeliveryQr] = useState<{url: string, link: string} | null>(null);
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+    // Carregar faturas quando o tab de Assinatura está activo
+    useEffect(() => {
+        if (activeTab !== "Assinatura SaaS" || !user?.restaurantId) return;
+        setInvoicesLoading(true);
+        fetch(`/api/billing/invoices?restaurantId=${user.restaurantId}`)
+            .then(r => r.json())
+            .then(d => setInvoices(d.invoices || []))
+            .catch(console.error)
+            .finally(() => setInvoicesLoading(false));
+    }, [activeTab, user?.restaurantId]);
 
     useEffect(() => {
         // Load real restaurant data
@@ -510,7 +523,13 @@ function SettingsContent() {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Plano Atual</p>
-                                            <h3 className="text-2xl font-black capitalize">{user?.subscriptionPlan || 'Starter'} (Mensal)</h3>
+                                            <h3 className="text-2xl font-black capitalize">
+                                                {user?.subscriptionPlan || 'Starter'} · {
+                                                    user?.restaurantData?.subscriptionBilling === 'quarterly' ? 'Trimestral'
+                                                    : user?.restaurantData?.subscriptionBilling === 'annual' ? 'Anual'
+                                                    : 'Mensal'
+                                                }
+                                            </h3>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Valor Licença</p>
@@ -565,12 +584,63 @@ function SettingsContent() {
                                 </div>
                             </div>
 
-                                <div className="p-6">
-                                    <h4 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-4">Histórico</h4>
-                                    <div className="text-center py-6 text-slate-400 text-sm font-medium">
-                                        O histórico de faturas será exibido aqui após o primeiro pagamento via Vinti4.
-                                    </div>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-slate-400" />
+                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Histórico de Faturas</h4>
                                 </div>
+                                {invoicesLoading ? (
+                                    <div className="flex items-center justify-center py-10">
+                                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                                    </div>
+                                ) : invoices.length === 0 ? (
+                                    <div className="py-10 text-center">
+                                        <FileText className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                                        <p className="text-slate-400 text-sm font-medium">Nenhuma fatura registada ainda.</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-100">
+                                                    {["Data", "Plano", "Valor", "Referência", "Estado"].map(h => (
+                                                        <th key={h} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {invoices.map((inv: any) => (
+                                                    <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-5 py-4 text-sm text-slate-600 font-medium whitespace-nowrap">
+                                                            {new Date(inv.created_at).toLocaleDateString("pt-PT")}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap capitalize">
+                                                            {inv.plan}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-sm font-black text-slate-900 whitespace-nowrap">
+                                                            {formatCurrency(inv.amount).replace(",00", "")}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-xs text-slate-400 font-medium">
+                                                            {inv.payment_reference || inv.notes || "—"}
+                                                        </td>
+                                                        <td className="px-5 py-4">
+                                                            {inv.status === "paid" ? (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                    <CheckCircle2 className="w-3 h-3" /> Pago
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                                    <Clock className="w-3 h-3" /> Pendente
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
