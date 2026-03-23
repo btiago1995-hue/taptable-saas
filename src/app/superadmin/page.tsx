@@ -126,18 +126,10 @@ export default function SuperAdminDashboard() {
     try {
       setIsLoading(true);
 
-      const { data: restData, error: restError } = await supabase
-        .from("restaurants")
-        .select("id, name, slug, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at, subscription_status");
-
-      if (restError) throw restError;
-
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .select("restaurant_id, total_amount, created_at")
-        .eq("payment_status", "paid");
-
-      if (orderError) throw orderError;
+      // Usa API route com supabaseAdmin para bypassar RLS e ver todos os tenants
+      const res = await fetch("/api/superadmin/restaurants");
+      if (!res.ok) throw new Error("Erro ao carregar dados da plataforma");
+      const { restaurants: restData, orders: orderData } = await res.json();
 
       const orderStats = (orderData || []).reduce(
         (acc: Record<string, { count: number; gmv: number; lastOrderAt: string | null }>, order: any) => {
