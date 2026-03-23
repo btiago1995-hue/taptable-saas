@@ -13,9 +13,17 @@ import { BILLING_AMOUNTS } from "@/lib/billing";
  */
 export async function GET(req: NextRequest) {
   // ── Autenticação do cron ──────────────────────────────────────────────────
+  // Vercel Cron envia: Authorization: Bearer <CRON_SECRET>
+  // Chamada manual pode usar: x-cron-secret: <CRON_SECRET>
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("x-cron-secret") !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (secret) {
+    const authHeader = req.headers.get("authorization");
+    const cronHeader = req.headers.get("x-cron-secret");
+    const bearerOk = authHeader === `Bearer ${secret}`;
+    const headerOk = cronHeader === secret;
+    if (!bearerOk && !headerOk) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   try {

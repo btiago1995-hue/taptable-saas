@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/billing",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/emails/trial-check",
+      "schedule": "0 9 * * *"
     }
   ]
 }
