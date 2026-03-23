@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
  * Executado diariamente pelo Vercel Cron às 08:00 UTC.
  * Protegido por CRON_SECRET — só o Vercel consegue chamar.
  */
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   // Verificar autorização do Vercel Cron
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
