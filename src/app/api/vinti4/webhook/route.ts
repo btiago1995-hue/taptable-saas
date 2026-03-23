@@ -42,9 +42,50 @@ export async function POST(req: NextRequest) {
         }
 
         if (!targetOrder) {
-            console.error("Vinti4 Webhook: Order not found for ref", merchantRespReference);
-             // Always return 200 to SISP so they don't retry endlessly
-             return NextResponse.json({ success: true });
+            // 1b. Se não há order, pode ser pagamento de subscrição SaaS
+            // (merchant_ref começa com "sub_") — lookup em subscription_invoices
+            if (merchantRespReference.startsWith('sub_')) {
+                const { data: pendingInv } = await supabaseAdmin
+                    .from('subscription_invoices')
+                    .select('id, restaurant_id, status')
+                    .eq('payment_reference', merchantRespReference)
+                    .eq('status', 'pending')
+                    .limit(1)
+                    .single();
+
+                if (pendingInv) {
+                    // Buscar credenciais do restaurante para verificar fingerprint
+                    const { data: saasRest } = await supabaseAdmin
+                        .from('restaurants')
+                        .select('vinti4_pos_aut_code')
+                        .eq('id', pendingInv.restaurant_id)
+                        .single();
+
+                    if (saasRest?.vinti4_pos_aut_code) {
+                        const isSaasValid = verifyVinti4Response({
+                            posAutCode: saasRest.vinti4_pos_aut_code,
+                            messageType, merchantRespCP, merchantRespTid,
+                            merchantRespMessageID, merchantRespReference,
+                            merchantRespPan, merchantResp, merchantRespTimeStamp,
+                            providedFingerprint: resultFingerPrint,
+                        });
+
+                        if (isSaasValid && merchantRespCP === "0") {
+                            const { recordPaymentOnInvoice } = await import('@/lib/billing');
+                            recordPaymentOnInvoice({
+                                invoiceId: pendingInv.id,
+                                method: 'vinti4',
+                                reference: merchantRespReference,
+                            }).catch(err => console.error('[Billing] Erro ao processar pagamento SaaS:', err));
+                            console.log(`Vinti4 Webhook: SaaS invoice ${pendingInv.id} paga.`);
+                        }
+                    }
+                }
+            } else {
+                console.error("Vinti4 Webhook: Order not found for ref", merchantRespReference);
+            }
+            // Always return 200 to SISP so they don't retry endlessly
+            return NextResponse.json({ success: true });
         }
 
         // 2. Fetch the Restaurant's Secrets to test the Fingerprint
@@ -124,16 +165,6 @@ export async function POST(req: NextRequest) {
                  body: JSON.stringify({ orderId: targetOrder.id, restaurantId: targetOrder.restaurant_id }),
              }).catch(err => console.error('[E-Fatura] Erro ao gerar IUD Vinti4:', err));
 
-             // Fase 4 Billing: se for pagamento de subscrição (merchant_ref começa com "sub")
-             // renova automaticamente a subscrição do restaurante
-             if (merchantRespReference.startsWith('sub')) {
-                 const { createAndPayInvoice } = await import('@/lib/billing');
-                 createAndPayInvoice({
-                     restaurantId: targetOrder.restaurant_id,
-                     method: 'vinti4',
-                     reference: merchantRespReference,
-                 }).catch(err => console.error('[Billing] Erro ao renovar subscrição via Vinti4:', err));
-             }
         } else {
              console.log(`Vinti4 Webhook: Payment failed or declined. CP: ${merchantRespCP}`);
         }
