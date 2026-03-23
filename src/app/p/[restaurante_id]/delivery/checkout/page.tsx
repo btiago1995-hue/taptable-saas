@@ -52,12 +52,7 @@ export default function DeliveryCheckoutPage() {
         loadData();
     }, [params]);
 
-    // Handle form toggle constraints
-    useEffect(() => {
-        if (orderMethod === "delivery" && paymentMethod === "cash") {
-            setPaymentMethod("card"); // Usually you restrict cash on delivery
-        }
-    }, [orderMethod, paymentMethod]);
+    // No payment method restrictions — all options available for both delivery and pickup
 
     if (isLoading) {
         return (
@@ -85,8 +80,9 @@ export default function DeliveryCheckoutPage() {
             return;
         }
 
-        // For Vinti4, the order starts as pending and the webhook will update it to paid.
-        const finalStatus = (paymentMethod === "cash" || paymentMethod === "vinti4") ? "pending" : "paid";
+        // All delivery/pickup orders start as pending — payment is confirmed later
+    // (Vinti4 webhook → paid, TPA/cash → confirmed by driver/manager)
+    const finalStatus: "pending" | "paid" = "pending";
 
         setIsSubmitting(true);
         try {
@@ -310,32 +306,20 @@ export default function DeliveryCheckoutPage() {
 
                                 <label className={cn(
                                     "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all",
-                                    paymentMethod === "card" ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
+                                    paymentMethod === "cash" ? "border-indigo-500 bg-indigo-50" : "border-slate-200 bg-white"
                                 )}>
-                                    <input type="radio" value="card" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} className="sr-only" />
-                                    <CreditCard className={cn("w-6 h-6", paymentMethod === "card" ? "text-indigo-600" : "text-slate-400")} />
+                                    <input type="radio" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} className="sr-only" />
+                                    <Banknote className={cn("w-6 h-6", paymentMethod === "cash" ? "text-indigo-600" : "text-slate-400")} />
                                     <div className="flex-1">
-                                        <div className="font-bold text-slate-900">Na entrega (TPA Móvel)</div>
-                                        <div className="text-xs text-slate-500">O entregador levará a maquininha</div>
+                                        <div className="font-bold text-slate-900">
+                                            {orderMethod === "delivery" ? "Pagar na Entrega" : "Em Dinheiro / TPA"}
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                            {orderMethod === "delivery" ? "Pague ao entregador (dinheiro ou TPA móvel)" : "Pague ao retirar na loja"}
+                                        </div>
                                     </div>
-                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "card" ? "border-indigo-500" : "border-slate-300")}>
-                                        {paymentMethod === "card" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
-                                    </div>
-                                </label>
-
-                                <label className={cn(
-                                    "flex items-center gap-4 border-2 rounded-xl p-4 transition-all relative overflow-hidden",
-                                    orderMethod === "delivery" ? "opacity-50 cursor-not-allowed bg-slate-50 border-slate-200" : "bg-white border-slate-200 cursor-pointer",
-                                    paymentMethod === "cash" && orderMethod === "pickup" ? "border-indigo-500 bg-indigo-50" : ""
-                                )}>
-                                    <input type="radio" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} disabled={orderMethod === "delivery"} className="sr-only" />
-                                    <Banknote className={cn("w-6 h-6", paymentMethod === "cash" && orderMethod === "pickup" ? "text-indigo-600" : "text-slate-400")} />
-                                    <div className="flex-1">
-                                        <div className="font-bold text-slate-900">Em Dinheiro</div>
-                                        <div className="text-xs text-slate-500 line-clamp-1">{orderMethod === "delivery" ? "Indisponível para Delivery" : "Pague ao retirar na loja"}</div>
-                                    </div>
-                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center relative", paymentMethod === "cash" && orderMethod === "pickup" ? "border-indigo-500" : "border-slate-300")}>
-                                        {paymentMethod === "cash" && orderMethod === "pickup" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
+                                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === "cash" ? "border-indigo-500" : "border-slate-300")}>
+                                        {paymentMethod === "cash" && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
                                     </div>
                                 </label>
                             </div>

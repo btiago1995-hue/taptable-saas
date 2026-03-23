@@ -16,15 +16,14 @@ export default function WaiterDashboard() {
     const [filter, setFilter] = useState<"pending" | "delivered">("pending");
 
     const displayOrders = useMemo(() => {
-        let filtered = activeOrders;
+        // Waiter only handles in-store (salão) orders.
+        // Delivery/pickup are managed in the Delivery page (/admin/delivery).
+        const inStore = activeOrders.filter((o: LiveOrder) => o.orderType !== "delivery" && o.orderType !== "pickup");
         if (filter === "pending") {
-            // Pending for the waiter means anything that is not yet delivered.
-            // But they mainly take action when it's "ready".
-            filtered = activeOrders.filter((o: LiveOrder) => o.status === "new" || o.status === "preparing" || o.status === "ready");
+            return [...inStore.filter((o: LiveOrder) => o.status === "new" || o.status === "preparing" || o.status === "ready")].reverse();
         } else {
-            filtered = activeOrders.filter((o: LiveOrder) => o.status === "delivered");
+            return [...inStore.filter((o: LiveOrder) => o.status === "delivered")].reverse();
         }
-        return [...filtered].reverse();
     }, [activeOrders, filter]);
 
     const getStatusText = (status: OrderStatus) => {
