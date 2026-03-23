@@ -33,7 +33,7 @@ const BILLING_LABELS: Record<string, string> = {
 interface TenantRestaurant {
   id: string;
   name: string;
-  slug: string;
+  slug?: string;
   is_active: boolean;
   created_at: string;
   subscription_plan?: string;
@@ -530,10 +530,12 @@ export default function SuperAdminDashboard() {
                               {idx === 0 && (r.gmv || 0) > 0 && <span className="text-base leading-none">🏆</span>}
                               <div>
                                 <p className="font-bold text-slate-900 text-sm">{r.name}</p>
-                                <a href={`/p/${r.slug}`} target="_blank" rel="noreferrer"
-                                  className="text-xs text-slate-400 hover:text-primary-600 font-medium transition-colors">
-                                  /{r.slug}
-                                </a>
+                                {r.slug && (
+                                  <a href={`/p/${r.slug}`} target="_blank" rel="noreferrer"
+                                    className="text-xs text-slate-400 hover:text-primary-600 font-medium transition-colors">
+                                    /{r.slug}
+                                  </a>
+                                )}
                               </div>
                             </div>
                           </td>

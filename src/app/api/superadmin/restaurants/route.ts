@@ -15,14 +15,14 @@ export async function GET() {
 
     const withStatus = await supabaseAdmin
       .from("restaurants")
-      .select("id, name, slug, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at, subscription_status");
+      .select("id, name, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at, subscription_status");
 
     if (withStatus.error) {
       // Fallback sem subscription_status
       console.warn("[superadmin/restaurants] subscription_status não disponível, a usar fallback:", withStatus.error.message);
       const fallback = await supabaseAdmin
         .from("restaurants")
-        .select("id, name, slug, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at");
+        .select("id, name, is_active, created_at, subscription_plan, subscription_billing, subscription_expires_at");
       if (fallback.error) restErr = fallback.error;
       else restaurants = (fallback.data || []).map(r => ({ ...r, subscription_status: "trial" }));
     } else {
