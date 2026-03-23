@@ -24,6 +24,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Erro ao guardar contacto" }, { status: 500 });
     }
 
+    // Enviar emails de confirmação (fire-and-forget)
+    const { sendContactLeadConfirmation, sendContactLeadInternal } = await import("@/lib/email");
+    sendContactLeadConfirmation({ to: email, name, businessName: business_name })
+      .catch(err => console.error("[contacto] Erro email cliente:", err));
+    sendContactLeadInternal({ name, email, phone: phone || null, businessName: business_name, numLocations: num_locations || 1, message: message || null })
+      .catch(err => console.error("[contacto] Erro email interno:", err));
+
     return NextResponse.json({ success: true, message: "Lead guardado com sucesso" });
   } catch (err) {
     console.error("Contact API error:", err);

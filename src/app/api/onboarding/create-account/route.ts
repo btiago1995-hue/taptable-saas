@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { validarNIF } from "@/lib/nif";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
     try {
@@ -77,6 +78,15 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin.from('restaurants').delete().eq('id', restData.id);
             return NextResponse.json({ error: 'Erro ao criar perfil: ' + profileErr.message }, { status: 500 });
         }
+
+        // Enviar email de boas-vindas (fire-and-forget)
+        sendWelcomeEmail({
+            to:             email,
+            restaurantName,
+            managerName:    name,
+            plan:           plan.charAt(0).toUpperCase() + plan.slice(1),
+            trialExpiresAt: trialExpiresAt.toISOString(),
+        }).catch(err => console.error('[onboarding] Erro ao enviar welcome email:', err));
 
         return NextResponse.json({ success: true, restaurantId: restData.id });
 
