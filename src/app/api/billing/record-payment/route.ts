@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Enviar email de confirmação ao manager do restaurante (fire-and-forget)
     const { data: managerData } = await supabaseAdmin
       .from("users")
-      .select("name, email:id")
+      .select("id")
       .eq("restaurant_id", restaurantId)
       .eq("role", "manager")
       .limit(1)
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (managerData && rest) {
-      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(managerData.email);
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(managerData.id);
       if (authUser?.user?.email) {
         const { BILLING_AMOUNTS } = await import("@/lib/billing");
         const plan    = rest.subscription_plan || "starter";
