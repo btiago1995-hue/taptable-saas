@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
@@ -109,6 +109,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (isManager || mods.includes("dashboard")) links.push({ name: "Equipe", href: "/admin/staff", icon: UserCog });
 
         // Extended manager features
+        // Faturação — sempre visível para manager
+        if (isManager) {
+            links.push({ name: "Faturação", href: "/admin/billing", icon: CreditCard });
+        }
+
         if (isManager || mods.includes("dashboard")) {
             // Analytics — growth+
             links.push(hasFeature(plan, 'analytics')
@@ -168,9 +173,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
+    const isPastDue = user?.subscriptionStatus === 'past_due';
+
     return (
         <div className="bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 pb-20 md:pb-0 min-h-[100dvh]">
             <OfflineBanner />
+            {/* Banner past_due — aviso de pagamento em atraso (não bloqueia acesso) */}
+            {isPastDue && user?.role !== 'superadmin' && pathname !== '/admin/billing' && (
+                <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-xs font-bold px-4 py-2.5 flex items-center justify-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Pagamento em atraso — o acesso será suspenso em breve.</span>
+                    <a href="/admin/billing" className="underline underline-offset-2 ml-1 hover:text-amber-100 transition-colors">Ver detalhes</a>
+                </div>
+            )}
 
             {/* Sidebar for Desktop */}
             <aside className={cn(

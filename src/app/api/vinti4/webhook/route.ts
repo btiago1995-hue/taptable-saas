@@ -123,6 +123,17 @@ export async function POST(req: NextRequest) {
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({ orderId: targetOrder.id, restaurantId: targetOrder.restaurant_id }),
              }).catch(err => console.error('[E-Fatura] Erro ao gerar IUD Vinti4:', err));
+
+             // Fase 4 Billing: se for pagamento de subscrição (merchant_ref começa com "sub")
+             // renova automaticamente a subscrição do restaurante
+             if (merchantRespReference.startsWith('sub')) {
+                 const { createAndPayInvoice } = await import('@/lib/billing');
+                 createAndPayInvoice({
+                     restaurantId: targetOrder.restaurant_id,
+                     method: 'vinti4',
+                     reference: merchantRespReference,
+                 }).catch(err => console.error('[Billing] Erro ao renovar subscrição via Vinti4:', err));
+             }
         } else {
              console.log(`Vinti4 Webhook: Payment failed or declined. CP: ${merchantRespCP}`);
         }
