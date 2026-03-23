@@ -43,6 +43,9 @@ interface TenantRestaurant {
   gmv?: number;
   lastOrderAt?: string | null;
   daysUntilExpiry?: number | null;
+  manager_name?: string | null;
+  manager_id?: string | null;
+  location_count?: number;
 }
 
 interface PaymentForm {
@@ -534,7 +537,17 @@ export default function SuperAdminDashboard() {
                             <div className="flex items-center gap-1.5">
                               {idx === 0 && (r.gmv || 0) > 0 && <span className="text-base leading-none">🏆</span>}
                               <div>
-                                <p className="font-bold text-slate-900 text-sm">{r.name}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-slate-900 text-sm">{r.name}</p>
+                                  {(r.location_count || 1) > 1 && (
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 whitespace-nowrap">
+                                      {r.location_count} unidades
+                                    </span>
+                                  )}
+                                </div>
+                                {r.manager_name && (
+                                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">{r.manager_name}</p>
+                                )}
                                 {r.slug && (
                                   <a href={`/p/${r.slug}`} target="_blank" rel="noreferrer"
                                     className="text-xs text-slate-400 hover:text-primary-600 font-medium transition-colors">

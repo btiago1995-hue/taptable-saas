@@ -28,6 +28,7 @@ const GROWTH_FEATURES = [
   "customers",
   "conta_corrente",
   "sisp",
+  "loyalty",
 ] as const;
 
 const PRO_FEATURES = [

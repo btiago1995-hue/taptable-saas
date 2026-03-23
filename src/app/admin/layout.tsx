@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Settings, PieChart, Users, LogOut, Store, Megaphone, ChefHat, Receipt, UserCog, ShieldAlert, CreditCard, PanelsTopLeft, AlertTriangle, ChevronDown, BarChart3, Package, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
@@ -16,6 +16,58 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [showStoreSwitcher, setShowStoreSwitcher] = useState(false);
     const { switchRestaurant } = useAuth();
+
+    // Register Service Worker + request push permission
+    useEffect(() => {
+        if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        if (!user?.restaurantId) return;
+
+        const registerAndSubscribe = async () => {
+            try {
+                const reg = await navigator.serviceWorker.register("/sw.js");
+
+                // Only subscribe if permission not already denied
+                if (Notification.permission === "denied") return;
+
+                const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                if (!vapidKey) return;
+
+                // Convert VAPID public key to Uint8Array
+                const urlBase64ToUint8Array = (base64String: string) => {
+                    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+                    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+                    const rawData = window.atob(base64);
+                    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+                };
+
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    // Request permission first
+                    const permission = await Notification.requestPermission();
+                    if (permission !== "granted") return;
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+                    });
+                }
+
+                // Save subscription to server
+                const { data: { session } } = await (await import("@/lib/supabaseClient")).supabase.auth.getSession();
+                await fetch("/api/push/subscribe", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                    },
+                    body: JSON.stringify({ subscription: sub.toJSON() }),
+                });
+            } catch (err) {
+                console.warn("[Push] Registration failed:", err);
+            }
+        };
+
+        registerAndSubscribe();
+    }, [user?.restaurantId]);
 
     // Load initial collapse state from localStorage
     useEffect(() => {
@@ -74,6 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 '/admin/conta-corrente': 'conta_corrente',
                 '/admin/saft': 'saft',
                 '/admin/retencoes': 'retencoes',
+                '/admin/fidelidade': 'loyalty',
             };
             const requiredFeature = gatedRoutes[pathname];
             if (requiredFeature && !hasFeature(plan, requiredFeature as any)) {
@@ -129,8 +182,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             links.push(
                 { name: "Clientes", href: "/admin/customers", icon: Users },
-                { name: "Configurações", href: "/admin/settings", icon: Settings }
+                { name: "Stock", href: "/admin/stock", icon: Package },
+                { name: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
+                { name: "Configurações", href: "/admin/settings", icon: Settings },
             );
+
+            // Fidelidade — growth+
+            if (hasFeature(plan, 'loyalty')) {
+                links.push({ name: "Fidelidade", href: "/admin/fidelidade", icon: Star });
+            }
 
             // SAF-T — pro only
             if (hasFeature(plan, 'saft')) {

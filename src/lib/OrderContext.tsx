@@ -230,6 +230,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         };
     };
 
+    const sendOrderPush = async (restaurantId: string, tableNumber: number, orderType: string) => {
+        const isDelivery = orderType === "delivery";
+        const isPickup = orderType === "pickup";
+        const body = isDelivery
+            ? "Novo pedido de entrega recebido"
+            : isPickup
+            ? "Novo pedido para takeaway recebido"
+            : `Novo pedido — Mesa ${tableNumber}`;
+        await fetch("/api/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                restaurantId,
+                title: "🔔 Novo Pedido",
+                body,
+                url: "/admin/kitchen",
+                tag: `order-${Date.now()}`,
+            }),
+        });
+    };
+
     const placeOrder = async (
         targetRestaurantId: string,
         tableNumber: number,
@@ -281,6 +302,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         const { data: insertedOrderId, error: rpcError } = await supabase.rpc('place_new_order_transaction', payload);
 
         if (!rpcError && insertedOrderId) {
+            // Fire-and-forget push notification to kitchen/admin staff
+            sendOrderPush(finalRestId, tableNumber, orderType).catch(() => {});
             return { orderId: insertedOrderId, orderNumber };
         }
 
@@ -340,6 +363,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             }
         }
 
+        // Fire-and-forget push notification to kitchen/admin staff
+        sendOrderPush(finalRestId, tableNumber, orderType).catch(() => {});
         return { orderId: insertedOrder.id, orderNumber };
     };
 

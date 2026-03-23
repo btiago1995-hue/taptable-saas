@@ -38,7 +38,40 @@ export async function GET() {
 
     if (orderErr) throw new Error(orderErr.message);
 
-    return NextResponse.json({ restaurants, orders: orders || [] });
+    // Fetch managers + multi-store info
+    const { data: managers } = await supabaseAdmin
+      .from("users")
+      .select("restaurant_id, name, id")
+      .eq("role", "manager");
+
+    const { data: allAccess } = await supabaseAdmin
+      .from("user_restaurant_access")
+      .select("user_id, restaurant_id");
+
+    // Count how many restaurants each user has access to
+    const userRestCount: Record<string, number> = {};
+    (allAccess || []).forEach((row: any) => {
+      userRestCount[row.user_id] = (userRestCount[row.user_id] || 0) + 1;
+    });
+
+    // Map restaurant_id → manager info
+    const managerMap: Record<string, { name: string; id: string; locationCount: number }> = {};
+    (managers || []).forEach((m: any) => {
+      managerMap[m.restaurant_id] = {
+        name: m.name,
+        id: m.id,
+        locationCount: userRestCount[m.id] || 1,
+      };
+    });
+
+    const enrichedRestaurants = restaurants.map(r => ({
+      ...r,
+      manager_name: managerMap[r.id]?.name || null,
+      manager_id:   managerMap[r.id]?.id   || null,
+      location_count: managerMap[r.id]?.locationCount || 1,
+    }));
+
+    return NextResponse.json({ restaurants: enrichedRestaurants, orders: orders || [] });
   } catch (err: any) {
     console.error("[superadmin/restaurants]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
