@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAndProcessOverdue } from "@/lib/billing";
 import { sendRenewalReminder, sendSuspensionNotice, sendDunningEmail } from "@/lib/email";
+import { sendWhatsApp, msgDunning } from "@/lib/whatsapp";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -112,6 +113,13 @@ async function sendEmailsForRestaurants(
           amount,
           daysUntilSuspension: daysLeft,
         });
+        // WhatsApp dunning — complemento ao email (fire-and-forget)
+        // Usa o telefone do manager se estiver no perfil Supabase Auth
+        if (authUser?.user?.phone) {
+          const billingUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://dineo.cv") + "/admin/billing";
+          sendWhatsApp(authUser.user.phone, msgDunning(rest.name, daysLeft, billingUrl))
+            .catch(err => console.error("[dunning] Erro WhatsApp:", err));
+        }
       } else if (type === "reminder" && daysLeft !== undefined) {
         await sendRenewalReminder({
           to:             email,

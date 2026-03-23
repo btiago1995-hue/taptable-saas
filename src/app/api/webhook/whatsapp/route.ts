@@ -1,100 +1,78 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+import {
+  sendWhatsApp,
+  msgOrderPreparing,
+  msgOrderReady,
+  msgOrderDelivered,
+  msgOrderPlaced,
+} from "@/lib/whatsapp";
 
-// Helper function to send WhatsApp via generic provider (like Z-API or Evolution API)
-async function sendWhatsAppMessage(phone: string, text: string) {
-    const apiUrl = process.env.WHATSAPP_API_URL;
-    const apiToken = process.env.WHATSAPP_API_TOKEN;
+/**
+ * POST /api/webhook/whatsapp
+ * Envia notificação WhatsApp ao cliente quando o status do pedido muda.
+ *
+ * Body: { orderId, newStatus }
+ * newStatus: "preparing" | "ready" | "out_for_delivery" | "delivered" | "order_placed"
+ *
+ * Chamado pelo KDS (kitchen/page.tsx) e pela rota de criação de pedidos delivery.
+ * Falha silenciosamente — nunca deve bloquear operações de cozinha.
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const { orderId, newStatus } = await req.json();
 
-    if (!apiUrl || !apiToken) {
-        console.warn(`[WhatsApp webhook] MOCK SEND: No API credentials found. Message intending for ${phone}: ${text}`);
-        return { success: true, mocked: true };
+    if (!orderId || !newStatus) {
+      return NextResponse.json({ error: "Missing orderId or newStatus" }, { status: 400 });
     }
 
-    try {
-        const response = await fetch(`${apiUrl}/message/sendText`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiToken}` // Or apikey depending on provider
-            },
-            body: JSON.stringify({
-                number: phone,
-                text: text
-            })
-        });
+    // Usar supabaseAdmin para evitar problemas de RLS em routes server-side
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_type, customer_phone, restaurants(name)")
+      .eq("id", orderId)
+      .single();
 
-        if (!response.ok) {
-            throw new Error(`Provider responded with status ${response.status}`);
-        }
-
-        return { success: true };
-    } catch (error) {
-        console.error("[WhatsApp webhook] Error sending message:", error);
-        return { success: false, error };
+    if (error || !order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
-}
 
-export async function POST(req: Request) {
-    try {
-        const body = await req.json();
-        const { orderId, newStatus } = body;
-
-        if (!orderId || !newStatus) {
-            return NextResponse.json({ error: 'Missing orderId or newStatus' }, { status: 400 });
-        }
-
-        // 1. Fetch Order Details from Supabase
-        const { data: order, error } = await supabase
-            .from('orders')
-            .select('*, restaurants(name)')
-            .eq('id', orderId)
-            .single();
-
-        if (error || !order) {
-            console.error("Order not found or db error:", error);
-            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-        }
-
-        // If it's not a delivery or pickup with a phone number, we don't send SMS
-        if (!order.customer_phone) {
-            return NextResponse.json({ message: 'No customer phone attached to order, skipping.' }, { status: 200 });
-        }
-
-        const restaurantName = order.restaurants?.name || "Dineo Parceiro";
-        const shortOrderId = order.id.substring(0, 8).toUpperCase();
-        let messageText = "";
-
-        // 2. Format the message depending on the status
-        switch (newStatus) {
-            case 'preparing':
-                messageText = `Olá! O seu pedido #${shortOrderId} no restaurante *${restaurantName}* foi aceite e está a ser preparado. 👨‍🍳🔥`;
-                break;
-            case 'ready':
-                if (order.order_type === 'delivery') {
-                    messageText = `Atenção! O seu pedido #${shortOrderId} está pronto e a caminho! 🚚💨 Prepare-se para receber.`;
-                } else if (order.order_type === 'pickup') {
-                    messageText = `O seu pedido #${shortOrderId} está pronto! 🛍️ Já pode vir levantar no balcão do *${restaurantName}*.`;
-                } else {
-                    messageText = `O seu pedido #${shortOrderId} está pronto para ser servido! 🍽️`;
-                }
-                break;
-            default:
-                // We don't send messages for other statuses to avoid spam
-                return NextResponse.json({ message: `Ignored status: ${newStatus}` }, { status: 200 });
-        }
-
-        // 3. Send via Provider
-        const result = await sendWhatsAppMessage(order.customer_phone, messageText);
-
-        if (!result.success) {
-            return NextResponse.json({ error: 'Failed to send WhatsApp message' }, { status: 500 });
-        }
-
-        return NextResponse.json({ success: true, mocked: result.mocked });
-
-    } catch (error: any) {
-        console.error("Webhook WhatsApp Error:", error);
-        return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+    if (!order.customer_phone) {
+      return NextResponse.json({ message: "No customer phone, skipping." });
     }
+
+    const restaurantName = (order.restaurants as any)?.name || "Restaurante";
+    const shortId        = orderId.substring(0, 8).toUpperCase();
+    const orderType      = order.order_type || "in_store";
+
+    let message = "";
+
+    switch (newStatus) {
+      case "order_placed":
+        message = msgOrderPlaced(restaurantName, shortId, orderType);
+        break;
+      case "preparing":
+        message = msgOrderPreparing(restaurantName, shortId);
+        break;
+      case "ready":
+      case "out_for_delivery":
+        message = msgOrderReady(restaurantName, shortId, orderType);
+        break;
+      case "delivered":
+        message = msgOrderDelivered(restaurantName, shortId);
+        break;
+      default:
+        return NextResponse.json({ message: `Ignored status: ${newStatus}` });
+    }
+
+    // Fire-and-forget — não bloquear resposta
+    sendWhatsApp(order.customer_phone, message)
+      .catch(err => console.error("[WhatsApp] Erro ao enviar:", err));
+
+    return NextResponse.json({ success: true });
+
+  } catch (err: any) {
+    console.error("[WhatsApp webhook] Erro:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

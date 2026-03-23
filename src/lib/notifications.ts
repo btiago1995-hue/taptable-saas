@@ -11,7 +11,7 @@
  */
 export async function triggerOrderNotification(
   orderId: string,
-  newStatus: "preparing" | "ready" | "out_for_delivery"
+  newStatus: "order_placed" | "preparing" | "ready" | "out_for_delivery" | "delivered"
 ): Promise<void> {
   try {
     const response = await fetch("/api/webhook/whatsapp", {

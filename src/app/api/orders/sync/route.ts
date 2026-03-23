@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendWhatsApp, msgOrderPlaced } from "@/lib/whatsapp";
 
 /**
  * POST /api/orders/sync
@@ -44,6 +45,20 @@ export async function POST(req: Request) {
     if (error) {
       console.error("[Sync API] Supabase insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // WhatsApp de confirmação para pedidos delivery/pickup com telefone
+    if (order.customerPhone && (order.orderType === "delivery" || order.orderType === "pickup")) {
+      const { data: rest } = await supabaseAdmin
+        .from("restaurants")
+        .select("name")
+        .eq("id", order.restaurantId)
+        .single();
+      const shortId = order.id.substring(0, 8).toUpperCase();
+      sendWhatsApp(
+        order.customerPhone,
+        msgOrderPlaced(rest?.name || "Restaurante", shortId, order.orderType)
+      ).catch(err => console.error("[sync] Erro WhatsApp order_placed:", err));
     }
 
     return NextResponse.json({ success: true, id: order.id });
