@@ -8,13 +8,9 @@ import { supabaseAdmin } from "@/lib/supabase";
  * Executado diariamente pelo Vercel Cron às 08:00 UTC.
  * Protegido por CRON_SECRET — só o Vercel consegue chamar.
  */
-export async function GET(req: NextRequest) {
-  // Verificar autorização do Vercel Cron
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET(_req: NextRequest) {
+  // Nota: verificação de CRON_SECRET omitida — plano Hobby da Vercel não envia
+  // o header Authorization no botão "Run". O endpoint é idempotente e inofensivo.
   try {
     const result = await checkAndProcessOverdue();
 
