@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
   Store, AlertTriangle, Loader2, TrendingUp, ShoppingBag,
@@ -190,12 +189,23 @@ export default function SuperAdminDashboard() {
     : restaurants;
 
   // ─── Actions ──────────────────────────────────────────────────────────────
+  const patchRestaurant = async (id: string, update: Record<string, unknown>) => {
+    const res = await fetch(`/api/superadmin/restaurants/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(d.error || `HTTP ${res.status}`);
+    }
+  };
+
   const toggleAccess = async (id: string, current: boolean) => {
     if (!confirm(`${current ? "Suspender" : "Restaurar"} acesso deste restaurante?`)) return;
     try {
       setIsToggling(id);
-      const { error } = await supabase.from("restaurants").update({ is_active: !current }).eq("id", id);
-      if (error) throw error;
+      await patchRestaurant(id, { is_active: !current });
       setRestaurants(prev => prev.map(r => r.id === id ? { ...r, is_active: !current } : r));
     } catch (err: any) {
       alert("Erro: " + err.message);
@@ -205,8 +215,7 @@ export default function SuperAdminDashboard() {
   const changePlan = async (id: string, plan: string) => {
     try {
       setIsToggling(id);
-      const { error } = await supabase.from("restaurants").update({ subscription_plan: plan }).eq("id", id);
-      if (error) throw error;
+      await patchRestaurant(id, { subscription_plan: plan });
       setRestaurants(prev => prev.map(r => r.id === id ? { ...r, subscription_plan: plan } : r));
     } catch (err: any) {
       alert("Erro: " + err.message);
@@ -222,11 +231,7 @@ export default function SuperAdminDashboard() {
         : new Date();
       base.setDate(base.getDate() + days);
       const newExpiry = base.toISOString();
-      const { error } = await supabase
-        .from("restaurants")
-        .update({ subscription_expires_at: newExpiry })
-        .eq("id", id);
-      if (error) throw error;
+      await patchRestaurant(id, { subscription_expires_at: newExpiry });
       setRestaurants(prev => prev.map(r =>
         r.id === id
           ? { ...r, subscription_expires_at: newExpiry, daysUntilExpiry: getDaysUntilExpiry(newExpiry) }
