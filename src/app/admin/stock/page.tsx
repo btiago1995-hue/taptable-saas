@@ -51,13 +51,21 @@ export default function StockPage() {
     setItems(prev => prev.map(it => it.id === id ? { ...it, stock_quantity: qty, status } : it));
   };
 
-  const handleQtyBlur = async (item: StockItem) => {
-    setSaving(item.id);
-    await supabase.from("menu_items").update({
-      stock_quantity: item.stock_quantity,
-      status: item.stock_quantity === 0 ? "sold_out" : "available",
-    }).eq("id", item.id);
-    setSaving(null);
+  const handleQtyBlur = async (itemId: string) => {
+    setSaving(itemId);
+    // Read from state snapshot at blur time to avoid stale closure
+    setItems(prev => {
+      const current = prev.find(it => it.id === itemId);
+      if (current) {
+        supabase.from("menu_items").update({
+          stock_quantity: current.stock_quantity,
+          status: current.stock_quantity === 0 ? "sold_out" : "available",
+        }).eq("id", itemId).then(() => setSaving(null));
+      } else {
+        setSaving(null);
+      }
+      return prev;
+    });
   };
 
   const filtered = items.filter(it => {
@@ -179,7 +187,7 @@ export default function StockPage() {
                           min={0}
                           value={item.stock_quantity}
                           onChange={e => handleQtyChange(item.id, e.target.value)}
-                          onBlur={() => handleQtyBlur(item)}
+                          onBlur={() => handleQtyBlur(item.id)}
                           className={cn(
                             "w-full border rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-300 text-center",
                             item.stock_quantity === 0
