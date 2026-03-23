@@ -4,25 +4,29 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req: NextRequest) {
   try {
-    // Authenticate from the cookie/header
     const supabaseAuth = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     const authHeader = req.headers.get("authorization");
-    if (authHeader) supabaseAuth.auth.setSession({ access_token: authHeader.replace("Bearer ", ""), refresh_token: "" });
+    if (authHeader) {
+      supabaseAuth.auth.setSession({
+        access_token: authHeader.replace("Bearer ", ""),
+        refresh_token: "",
+      });
+    }
 
     const { data: { user: sessionUser } } = await supabaseAuth.auth.getUser();
 
     const { searchParams } = new URL(req.url);
-    const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
+    const year  = parseInt(searchParams.get("year")  || String(new Date().getFullYear()));
     const month = parseInt(searchParams.get("month") || String(new Date().getMonth() + 1));
 
     if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
       return NextResponse.json({ error: "Parâmetros year e month inválidos" }, { status: 400 });
     }
 
-    // Get restaurant from JWT
+    // Auth + plan gate
     let restaurantId: string | null = null;
     if (sessionUser) {
       const { data: profile } = await supabaseAdmin
@@ -30,9 +34,8 @@ export async function GET(req: NextRequest) {
         .select("restaurant_id, restaurants(subscription_plan, name, nif_number, address)")
         .eq("id", sessionUser.id)
         .single();
-      restaurantId = profile?.restaurant_id || null;
 
-      // Check plan
+      restaurantId = profile?.restaurant_id || null;
       const plan = (profile?.restaurants as any)?.subscription_plan || "starter";
       if (!["pro"].includes(plan)) {
         return NextResponse.json({ error: "Plano PRO necessário para exportar SAF-T" }, { status: 403 });
@@ -43,28 +46,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    // Fetch restaurant details
+    // Restaurant details
     const { data: restaurant } = await supabaseAdmin
       .from("restaurants")
       .select("name, nif_number, address, city, country")
       .eq("id", restaurantId)
       .single();
 
-    // Fetch orders for the period
+    // Orders for the period (only delivered/paid)
     const startDate = new Date(year, month - 1, 1).toISOString();
-    const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+    const endDate   = new Date(year, month, 0, 23, 59, 59).toISOString();
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("*, order_items(*)")
+      .select("id, order_number, created_at, total_amount, subtotal, delivery_fee, payment_method, payment_status, customer_name, customer_nif, order_type, order_items(id, name, price, quantity)")
       .eq("restaurant_id", restaurantId)
       .gte("created_at", startDate)
       .lte("created_at", endDate)
-      .in("status", ["delivered", "completed", "paid"]);
+      .eq("status", "delivered");
 
-    // Generate SAF-T XML (adapted for CV/DNRE based on SAF-T PT structure)
     const xml = generateSaftXml({
-      restaurant: restaurant || { name: "Restaurante", nif_number: "000000000", address: "" },
+      restaurant: restaurant || { name: "Restaurante", nif_number: "000000000", address: "", city: "Praia", country: "CV" },
       orders: orders || [],
       year,
       month,
@@ -78,45 +80,103 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("SAF-T export error:", error);
+    console.error("[SAF-T] Export error:", error);
     return NextResponse.json({ error: "Erro interno ao gerar SAF-T" }, { status: 500 });
   }
 }
 
-function generateSaftXml({ restaurant, orders, year, month }: {
+// ─── XML Generator ───────────────────────────────────────────────────────────
+
+function esc(str: string): string {
+  return (str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function generateSaftXml({
+  restaurant,
+  orders,
+  year,
+  month,
+}: {
   restaurant: any;
   orders: any[];
   year: number;
   month: number;
 }) {
-  const totalVendas = orders.reduce((s: number, o: any) => s + (Number(o.total) || 0), 0);
-  const numOrders = orders.length;
+  const lastDay  = new Date(year, month, 0).getDate();
+  const dateCreated = new Date().toISOString().split("T")[0];
+  const startDateStr = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDateStr   = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
 
-  const invoiceLines = orders.map((order: any, idx: number) => {
-    const items = order.order_items || [];
+  // Totals — use total_amount (includes delivery fee)
+  const totalCredit = orders.reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
+
+  // Invoice counter — per-month sequential starting at 1
+  const invoiceLines = orders.map((order, idx) => {
+    const items      = order.order_items || [];
+    const total      = Number(order.total_amount) || 0;
+    const invoiceNum = `FT ${year}/${String(idx + 1).padStart(4, "0")}`;
+    const invoiceDate = (order.created_at || "").split("T")[0];
+
+    // Determine doc type: FT when customer has NIF, FS otherwise
+    const docType = order.customer_nif ? "FT" : "FS";
+
+    const lineItems = items.map((item: any, i: number) => {
+      const unitPrice  = Number(item.price) || 0;
+      const qty        = Number(item.quantity) || 1;
+      const lineTotal  = unitPrice * qty;
+      return `
+        <Line>
+          <LineNumber>${i + 1}</LineNumber>
+          <ProductCode>${esc(item.id?.substring(0, 30) || "ITEM")}</ProductCode>
+          <ProductDescription>${esc(item.name || "Produto")}</ProductDescription>
+          <Quantity>${qty.toFixed(2)}</Quantity>
+          <UnitPrice>${unitPrice.toFixed(2)}</UnitPrice>
+          <CreditAmount>${lineTotal.toFixed(2)}</CreditAmount>
+          <Tax>
+            <TaxType>IVA</TaxType>
+            <TaxCountryRegion>CV</TaxCountryRegion>
+            <TaxCode>ISE</TaxCode>
+            <TaxPercentage>0</TaxPercentage>
+          </Tax>
+        </Line>`;
+    }).join("");
+
+    const customerBlock = order.customer_name
+      ? `
+      <CustomerID>${esc(order.customer_nif || "CONSUMIDOR-FINAL")}</CustomerID>`
+      : `
+      <CustomerID>CONSUMIDOR-FINAL</CustomerID>`;
+
     return `
     <Invoice>
-      <InvoiceNo>FT2025/${String(idx + 1).padStart(4, "0")}</InvoiceNo>
-      <InvoiceDate>${order.created_at?.split("T")[0] || ""}</InvoiceDate>
-      <InvoiceType>FT</InvoiceType>
+      <InvoiceNo>${esc(invoiceNum)}</InvoiceNo>
+      <ATCUD>0</ATCUD>
+      <DocumentStatus>
+        <InvoiceStatus>N</InvoiceStatus>
+        <InvoiceStatusDate>${invoiceDate}T00:00:00</InvoiceStatusDate>
+        <SourceID>DINEO</SourceID>
+        <SourceBilling>P</SourceBilling>
+      </DocumentStatus>
+      <Hash>0</Hash>
+      <HashControl>0</HashControl>
+      <Period>${month}</Period>
+      <InvoiceDate>${invoiceDate}</InvoiceDate>
+      <InvoiceType>${docType}</InvoiceType>
       <SpecialRegimes>
         <SelfBillingIndicator>0</SelfBillingIndicator>
       </SpecialRegimes>
       <SourceID>DINEO</SourceID>
+      <SystemEntryDate>${order.created_at?.replace("Z", "") || invoiceDate + "T00:00:00"}</SystemEntryDate>${customerBlock}
+      ${lineItems}
       <DocumentTotals>
-        <TaxPayable>0</TaxPayable>
-        <NetTotal>${(Number(order.total) || 0).toFixed(2)}</NetTotal>
-        <GrossTotal>${(Number(order.total) || 0).toFixed(2)}</GrossTotal>
+        <TaxPayable>0.00</TaxPayable>
+        <NetTotal>${total.toFixed(2)}</NetTotal>
+        <GrossTotal>${total.toFixed(2)}</GrossTotal>
       </DocumentTotals>
-      ${items.map((item: any, i: number) => `
-      <Line>
-        <LineNumber>${i + 1}</LineNumber>
-        <ProductCode>${item.menu_item_id || "ITEM"}</ProductCode>
-        <ProductDescription>${(item.name || "Produto").replace(/&/g, "&amp;")}</ProductDescription>
-        <Quantity>${item.quantity || 1}</Quantity>
-        <UnitPrice>${(Number(item.unit_price) || Number(item.price) || 0).toFixed(2)}</UnitPrice>
-        <CreditAmount>${((Number(item.unit_price) || Number(item.price) || 0) * (item.quantity || 1)).toFixed(2)}</CreditAmount>
-      </Line>`).join("")}
     </Invoice>`;
   }).join("\n");
 
@@ -124,21 +184,21 @@ function generateSaftXml({ restaurant, orders, year, month }: {
 <AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_2.04">
   <Header>
     <AuditFileVersion>1.01_01</AuditFileVersion>
-    <CompanyID>${restaurant.nif_number || "000000000"}</CompanyID>
-    <TaxRegistrationNumber>${restaurant.nif_number || "000000000"}</TaxRegistrationNumber>
+    <CompanyID>${esc(restaurant.nif_number || "000000000")}</CompanyID>
+    <TaxRegistrationNumber>${esc(restaurant.nif_number || "000000000")}</TaxRegistrationNumber>
     <TaxAccountingBasis>F</TaxAccountingBasis>
-    <CompanyName>${(restaurant.name || "Restaurante").replace(/&/g, "&amp;")}</CompanyName>
+    <CompanyName>${esc(restaurant.name || "Restaurante")}</CompanyName>
     <CompanyAddress>
-      <AddressDetail>${(restaurant.address || "").replace(/&/g, "&amp;")}</AddressDetail>
-      <City>${(restaurant.city || "Praia").replace(/&/g, "&amp;")}</City>
+      <AddressDetail>${esc(restaurant.address || "")}</AddressDetail>
+      <City>${esc(restaurant.city || "Praia")}</City>
       <PostalCode>0000-000</PostalCode>
-      <Country>CV</Country>
+      <Country>${esc(restaurant.country || "CV")}</Country>
     </CompanyAddress>
     <FiscalYear>${year}</FiscalYear>
-    <StartDate>${year}-${String(month).padStart(2, "0")}-01</StartDate>
-    <EndDate>${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}</EndDate>
+    <StartDate>${startDateStr}</StartDate>
+    <EndDate>${endDateStr}</EndDate>
     <CurrencyCode>CVE</CurrencyCode>
-    <DateCreated>${new Date().toISOString().split("T")[0]}</DateCreated>
+    <DateCreated>${dateCreated}</DateCreated>
     <TaxEntity>Global</TaxEntity>
     <ProductCompanyTaxID>Dineo by Servyx</ProductCompanyTaxID>
     <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
@@ -147,9 +207,9 @@ function generateSaftXml({ restaurant, orders, year, month }: {
   </Header>
   <SourceDocuments>
     <SalesInvoices>
-      <NumberOfEntries>${numOrders}</NumberOfEntries>
+      <NumberOfEntries>${orders.length}</NumberOfEntries>
       <TotalDebit>0.00</TotalDebit>
-      <TotalCredit>${totalVendas.toFixed(2)}</TotalCredit>
+      <TotalCredit>${totalCredit.toFixed(2)}</TotalCredit>
       ${invoiceLines}
     </SalesInvoices>
   </SourceDocuments>
