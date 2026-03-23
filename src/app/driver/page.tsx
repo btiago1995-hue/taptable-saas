@@ -105,11 +105,15 @@ export default function DriverDashboard() {
     const [distanceInfo, setDistanceInfo] = useState<{ km: string; minutes: number } | null>(null);
 
     const deliveries = useMemo(() => {
-        if (!isOnline) return [];
+        if (!isOnline || !user?.id) return [];
         return activeOrders
-            .filter((o: LiveOrder) => o.orderType === "delivery" && (o.status === "preparing" || o.status === "ready" || o.status === "delivering"))
+            .filter((o: LiveOrder) =>
+                o.orderType === "delivery" &&
+                (o.status === "preparing" || o.status === "ready" || o.status === "delivering") &&
+                o.assignedDriverId === user.id
+            )
             .reverse();
-    }, [activeOrders, isOnline]);
+    }, [activeOrders, isOnline, user?.id]);
 
     // Get driver's GPS position
     useEffect(() => {
@@ -163,9 +167,10 @@ export default function DriverDashboard() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const deliveredToday = activeOrders.filter(o => 
-            o.orderType === "delivery" && 
-            o.status === "delivered" && 
+        const deliveredToday = activeOrders.filter(o =>
+            o.orderType === "delivery" &&
+            o.status === "delivered" &&
+            o.assignedDriverId === user?.id &&
             new Date(o.createdAt) >= today
         );
 
@@ -274,8 +279,8 @@ export default function DriverDashboard() {
                             <div className="w-24 h-24 rounded-full bg-slate-800/80 backdrop-blur-xl flex items-center justify-center mb-6 shadow-2xl border border-slate-700">
                                 <div className="w-4 h-4 rounded-full bg-indigo-500 animate-ping" />
                             </div>
-                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Procurando...</h2>
-                            <p className="text-slate-400 text-center font-medium">Você está online. Vá para áreas de alta demanda.</p>
+                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Aguardando pedido...</h2>
+                            <p className="text-slate-400 text-center font-medium">O gestor irá atribuir-lhe uma entrega em breve.</p>
                         </>
                     ) : (
                         <>

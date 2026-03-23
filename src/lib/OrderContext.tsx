@@ -36,11 +36,14 @@ export interface LiveOrder {
     deliveryFee?: number;
     deliveryNote?: string;
     orderNumber?: string;
+    assignedDriverId?: string;
+    assignedDriverName?: string;
     createdAt: string;
 }
 
 interface OrderContextType {
     orders: LiveOrder[];
+    assignOrder: (orderId: string, driverId: string, driverName: string) => Promise<void>;
     placeOrder: (
         targetRestaurantId: string, // Kept for compatibility, but context will prefer route/auth tenant 
         tableNumber: number,
@@ -221,6 +224,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             deliveryFee: dbOrder.delivery_fee,
             deliveryNote: dbOrder.delivery_note,
             orderNumber: dbOrder.order_number,
+            assignedDriverId: dbOrder.assigned_driver_id,
+            assignedDriverName: dbOrder.assigned_driver_name,
             createdAt: dbOrder.created_at
         };
     };
@@ -338,6 +343,18 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         return { orderId: insertedOrder.id, orderNumber };
     };
 
+    const assignOrder = async (orderId: string, driverId: string, driverName: string) => {
+        // Optimistic update
+        setOrders(prev => prev.map(o =>
+            o.id === orderId ? { ...o, assignedDriverId: driverId, assignedDriverName: driverName, status: "delivering" as OrderStatus } : o
+        ));
+        await supabase.from('orders').update({
+            assigned_driver_id: driverId,
+            assigned_driver_name: driverName,
+            status: "delivering"
+        }).eq('id', orderId);
+    };
+
     const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
         // Optimistic UI Update for instant feedback on KDS and Waiter panels
         setOrders(prev => prev.map(o => {
@@ -425,7 +442,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <OrderContext.Provider value={{ orders, placeOrder, updateOrderStatus, updatePaymentStatus, closeTableOrders, markItemDelivered }}>
+        <OrderContext.Provider value={{ orders, placeOrder, assignOrder, updateOrderStatus, updatePaymentStatus, closeTableOrders, markItemDelivered }}>
             {children}
         </OrderContext.Provider>
     );
