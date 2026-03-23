@@ -119,17 +119,20 @@ export default function SuperAdminDashboard() {
   const [paymentForm, setPaymentForm] = useState<PaymentForm | null>(null);
   const [isPayment,   setIsPayment]   = useState(false);
   const [paymentError,setPaymentError]= useState("");
+  const [fetchError,  setFetchError]  = useState("");
 
   useEffect(() => { fetchRestaurants(); }, []);
 
   const fetchRestaurants = async () => {
     try {
       setIsLoading(true);
+      setFetchError("");
 
       // Usa API route com supabaseAdmin para bypassar RLS e ver todos os tenants
       const res = await fetch("/api/superadmin/restaurants");
-      if (!res.ok) throw new Error("Erro ao carregar dados da plataforma");
-      const { restaurants: restData, orders: orderData } = await res.json();
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const { restaurants: restData, orders: orderData } = json;
 
       const orderStats = (orderData || []).reduce(
         (acc: Record<string, { count: number; gmv: number; lastOrderAt: string | null }>, order: any) => {
@@ -154,8 +157,9 @@ export default function SuperAdminDashboard() {
 
       enriched.sort((a, b) => (b.gmv || 0) - (a.gmv || 0));
       setRestaurants(enriched);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao carregar tenants:", err);
+      setFetchError(err.message || "Erro desconhecido");
     } finally {
       setIsLoading(false);
     }
@@ -341,7 +345,21 @@ export default function SuperAdminDashboard() {
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
           <div className="max-w-7xl mx-auto space-y-6">
 
-            {/* ── Métricas ──────────────────────────────────────────────── */}
+            {/* ── Erro de carregamento ──────────────────────────────────── */}
+            {fetchError && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl px-6 py-4 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-rose-800">Erro ao carregar dados</p>
+                  <p className="text-xs text-rose-600 font-mono mt-0.5">{fetchError}</p>
+                </div>
+                <button onClick={fetchRestaurants} className="ml-auto text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors">
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
+          {/* ── Métricas ──────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <MetricCard
                 label="Lojas Ativas"
