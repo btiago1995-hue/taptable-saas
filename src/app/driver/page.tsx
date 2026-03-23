@@ -3,20 +3,23 @@
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Clock, MapPin, PhoneCall, Navigation, ArrowRight, User, Loader2, Store, Power, LogOut, X, Banknote, CheckCircle2, History, ExternalLink, MessageSquare } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import {
+    Clock, MapPin, PhoneCall, Navigation, ArrowRight, User, Loader2,
+    Store, Power, LogOut, X, Banknote, CheckCircle2, History,
+    MessageSquare, Package, ChevronRight, Bike
+} from "lucide-react";
 
-function SwipeToConfirm({ onConfirm, isConfirming }: { onConfirm: () => void, isConfirming: boolean }) {
+// ─── Swipe to Confirm ────────────────────────────────────────────────────────
+
+function SwipeToConfirm({ onConfirm, isConfirming }: { onConfirm: () => void; isConfirming: boolean }) {
     const [dragX, setDragX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [unlocked, setUnlocked] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!isConfirming && unlocked) {
-            setUnlocked(false);
-            setDragX(0);
-        }
+        if (!isConfirming && unlocked) { setUnlocked(false); setDragX(0); }
     }, [isConfirming]);
 
     const handlePointerDown = (e: React.PointerEvent) => {
@@ -24,69 +27,49 @@ function SwipeToConfirm({ onConfirm, isConfirming }: { onConfirm: () => void, is
         setIsDragging(true);
         e.currentTarget.setPointerCapture(e.pointerId);
     };
-
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDragging || isConfirming || unlocked || !containerRef.current) return;
-        
         const rect = containerRef.current.getBoundingClientRect();
-        const maxDrag = rect.width - 72; // thumb width (56px) + padding (16px)
-        
-        // Calculate new X based on pointer position relative to container
-        let newX = e.clientX - rect.left - 36;
-        newX = Math.max(0, Math.min(newX, maxDrag));
-        
+        const maxDrag = rect.width - 72;
+        let newX = Math.max(0, Math.min(e.clientX - rect.left - 36, maxDrag));
         setDragX(newX);
-
-        if (newX > maxDrag * 0.7) { // 70% threshold is very forgiving for gloves
-            setUnlocked(true);
-            setIsDragging(false);
-            setDragX(maxDrag);
-            onConfirm();
-        }
+        if (newX > maxDrag * 0.7) { setUnlocked(true); setIsDragging(false); setDragX(maxDrag); onConfirm(); }
     };
-
     const handlePointerUp = (e: React.PointerEvent) => {
         setIsDragging(false);
         e.currentTarget.releasePointerCapture(e.pointerId);
-        if (!unlocked) {
-            setDragX(0); // snap back
-        }
+        if (!unlocked) setDragX(0);
     };
 
     return (
-        <div 
+        <div
             ref={containerRef}
             className={cn(
-                "relative w-full h-[72px] rounded-full overflow-hidden transition-all duration-300 touch-none select-none",
-                (isConfirming || unlocked) ? "bg-emerald-500" : "bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+                "relative w-full h-16 rounded-2xl overflow-hidden touch-none select-none transition-all duration-300",
+                (isConfirming || unlocked) ? "bg-emerald-500" : "bg-emerald-600 shadow-[0_4px_24px_rgba(16,185,129,0.35)]"
             )}
         >
             {(isConfirming || unlocked) ? (
-                <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-white tracking-widest uppercase z-10 gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" /> Finalizado
+                <div className="absolute inset-0 flex items-center justify-center font-black text-base text-white tracking-widest uppercase gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Entrega Concluída!
                 </div>
             ) : (
                 <>
-                    <div className="absolute inset-0 flex items-center justify-center font-bold text-lg text-white pl-8 z-0 tracking-widest uppercase opacity-80">
-                        Concluir Entrega
+                    <div className="absolute inset-0 flex items-center justify-center font-bold text-base text-white/70 tracking-widest uppercase">
+                        Deslize para Concluir
                     </div>
-                    {/* The green filled track that trails behind the thumb */}
-                    <div 
-                        className="absolute top-2 bottom-2 left-2 bg-emerald-500 rounded-full z-10"
-                        style={{ 
-                            width: dragX > 0 ? dragX + 56 : 56,
-                            transition: isDragging ? 'none' : 'width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                        }}
+                    <div
+                        className="absolute top-2 bottom-2 left-2 bg-white/20 rounded-xl z-10"
+                        style={{ width: dragX > 0 ? dragX + 52 : 52, transition: isDragging ? 'none' : 'width 0.3s cubic-bezier(0.175,0.885,0.32,1.275)' }}
                     >
-                        {/* The Thumb */}
-                        <div 
-                            className="absolute right-0 top-0 bottom-0 w-14 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg"
+                        <div
+                            className="absolute right-0 top-0 bottom-0 w-12 bg-white rounded-xl flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md"
                             onPointerDown={handlePointerDown}
                             onPointerMove={handlePointerMove}
                             onPointerUp={handlePointerUp}
                             onPointerCancel={handlePointerUp}
                         >
-                            <ArrowRight className="w-6 h-6 text-white" />
+                            <ArrowRight className="w-5 h-5 text-emerald-600" />
                         </div>
                     </div>
                 </>
@@ -94,6 +77,46 @@ function SwipeToConfirm({ onConfirm, isConfirming }: { onConfirm: () => void, is
         </div>
     );
 }
+
+// ─── Step Indicator ───────────────────────────────────────────────────────────
+
+function StepIndicator({ status }: { status: string }) {
+    const steps = [
+        { key: "preparing", label: "Preparando" },
+        { key: "ready",     label: "Pronto" },
+        { key: "delivering", label: "A caminho" },
+        { key: "delivered", label: "Entregue" },
+    ];
+    const currentIdx = steps.findIndex(s => s.key === status);
+
+    return (
+        <div className="flex items-center gap-1 w-full">
+            {steps.map((step, idx) => {
+                const done = idx < currentIdx;
+                const active = idx === currentIdx;
+                return (
+                    <div key={step.key} className="flex items-center flex-1 min-w-0">
+                        <div className="flex flex-col items-center flex-1 min-w-0">
+                            <div className={cn(
+                                "w-2 h-2 rounded-full mb-1 transition-all",
+                                done ? "bg-emerald-400" : active ? "bg-white scale-125" : "bg-slate-600"
+                            )} />
+                            <span className={cn(
+                                "text-[9px] font-bold uppercase tracking-wide truncate w-full text-center",
+                                done ? "text-emerald-400" : active ? "text-white" : "text-slate-600"
+                            )}>{step.label}</span>
+                        </div>
+                        {idx < steps.length - 1 && (
+                            <div className={cn("h-px flex-1 mx-1 mb-3 transition-all", done ? "bg-emerald-400" : "bg-slate-700")} />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DriverDashboard() {
     const { orders: activeOrders, updateOrderStatus } = useOrders();
@@ -115,18 +138,18 @@ export default function DriverDashboard() {
             .reverse();
     }, [activeOrders, isOnline, user?.id]);
 
-    // Get driver's GPS position
+    // GPS
     useEffect(() => {
         if (!navigator.geolocation) return;
         const watchId = navigator.geolocation.watchPosition(
-            (pos) => setDriverCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => {}, // silently fail
+            pos => setDriverCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => {},
             { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
         );
         return () => navigator.geolocation.clearWatch(watchId);
     }, []);
 
-    // Haversine distance calculator
+    // Haversine
     const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -135,365 +158,378 @@ export default function DriverDashboard() {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    // Geocode address & compute distance whenever active delivery changes
+    // Distance calc
     useEffect(() => {
         const delivery = deliveries[0];
         if (!delivery || delivery.status !== "delivering" || !delivery.deliveryAddress || !driverCoords) {
-            setDistanceInfo(null);
-            return;
+            setDistanceInfo(null); return;
         }
-        const encoded = encodeURIComponent(delivery.deliveryAddress);
-        fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(delivery.deliveryAddress)}&format=json&limit=1`)
             .then(r => r.json())
             .then(results => {
-                if (results && results[0]) {
-                    const destLat = parseFloat(results[0].lat);
-                    const destLng = parseFloat(results[0].lon);
-                    const km = haversineKm(driverCoords.lat, driverCoords.lng, destLat, destLng);
-                    const minutes = Math.round((km / 25) * 60); // ~25 km/h average city speed
-                    setDistanceInfo({ km: km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`, minutes });
+                if (results?.[0]) {
+                    const km = haversineKm(driverCoords.lat, driverCoords.lng, parseFloat(results[0].lat), parseFloat(results[0].lon));
+                    setDistanceInfo({ km: km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`, minutes: Math.round((km / 25) * 60) });
                 }
             })
             .catch(() => setDistanceInfo(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deliveries[0]?.id, driverCoords]);
 
-    const openGoogleMaps = (address: string) => {
-        const encoded = encodeURIComponent(address);
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}&travelmode=driving`, '_blank');
-    };
-
     const todayMetrics = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const deliveredToday = activeOrders.filter(o =>
-            o.orderType === "delivery" &&
-            o.status === "delivered" &&
-            o.assignedDriverId === user?.id &&
-            new Date(o.createdAt) >= today
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const done = activeOrders.filter(o =>
+            o.orderType === "delivery" && o.status === "delivered" &&
+            o.assignedDriverId === user?.id && new Date(o.createdAt) >= today
         );
-
-        const totalEarnings = deliveredToday.reduce((sum, o) => sum + (o.deliveryFee || 0), 0);
-
         return {
-            count: deliveredToday.length,
-            earnings: totalEarnings,
-            history: [...deliveredToday].reverse().slice(0, 20)
+            count: done.length,
+            earnings: done.reduce((s, o) => s + (o.deliveryFee || 0), 0),
+            history: [...done].reverse().slice(0, 20)
         };
-    }, [activeOrders]);
+    }, [activeOrders, user?.id]);
 
     const activeDelivery = deliveries[0];
+    const queuedDeliveries = deliveries.slice(1);
 
     const handlePickup = (orderId: string) => {
         setConfirmingId(orderId);
-        setTimeout(() => {
-            updateOrderStatus(orderId, "delivering");
-            setConfirmingId(null);
-        }, 800);
+        setTimeout(() => { updateOrderStatus(orderId, "delivering"); setConfirmingId(null); }, 800);
     };
-
     const handleConfirmDelivery = (orderId: string) => {
         setConfirmingId(orderId);
-        setTimeout(() => {
-            updateOrderStatus(orderId, "delivered");
-            setConfirmingId(null);
-        }, 1000);
+        setTimeout(() => { updateOrderStatus(orderId, "delivered"); setConfirmingId(null); }, 1000);
     };
 
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-            </div>
-        );
-    }
+    const initials = user?.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() || "D";
+
+    if (authLoading) return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white font-sans relative overflow-hidden flex flex-col">
+        <div className="min-h-screen bg-slate-950 text-white font-sans relative overflow-hidden flex flex-col">
 
-            {/* Map Background Simulation */}
-            <div className="absolute inset-0 z-0">
-                {/* Dark Map Texture */}
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 mix-blend-luminosity grayscale" />
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-transparent to-slate-900" />
+            {/* Map-style background */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-20 grayscale" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/40 to-slate-950" />
 
-                {activeDelivery && activeDelivery.status === "delivering" && (
-                    <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                        <div className="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg mb-2 z-10 animate-bounce">
-                            Destino
-                        </div>
-                        <div className="w-6 h-6 bg-emerald-500 rounded-full border-4 border-slate-900 shadow-[0_0_15px_rgba(16,185,129,0.5)] z-0" />
+                {/* Map pin */}
+                {activeDelivery?.status === "delivering" && (
+                    <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                        <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg mb-2 animate-bounce">Destino</div>
+                        <div className="w-5 h-5 bg-emerald-500 rounded-full border-4 border-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.6)]" />
                     </div>
                 )}
-                {activeDelivery && (activeDelivery.status === "ready" || activeDelivery.status === "preparing") && (
-                    <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                        <div className="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg mb-2 z-10 animate-bounce">
-                            O Seu Restaurante
-                        </div>
-                        <Store className="w-8 h-8 text-amber-500 drop-shadow-lg z-0" />
+                {activeDelivery && activeDelivery.status !== "delivering" && (
+                    <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                        <div className="bg-amber-500 text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold shadow-lg mb-2 animate-bounce">Restaurante</div>
+                        <Store className="w-7 h-7 text-amber-400 drop-shadow-lg" />
                     </div>
                 )}
             </div>
 
-            {/* Header - Uber Eats Style */}
-            <header className="relative z-10 p-5 flex justify-between items-start mt-4">
-                <button 
+            {/* ── Header ── */}
+            <header className="relative z-10 px-5 pt-6 pb-2 flex justify-between items-center">
+                <button
                     onClick={() => setIsProfileOpen(true)}
-                    className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-slate-200 overflow-hidden active:scale-95 transition-transform"
+                    className="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sm font-black text-white shadow-md active:scale-95 transition-transform"
                 >
-                    <User className="w-6 h-6 text-slate-800" />
+                    {initials}
                 </button>
 
-                <button 
+                {/* Stats pill */}
+                <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-full px-4 py-1.5 shadow-md">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-xs font-bold text-white">{todayMetrics.count} entregas</span>
+                    <span className="w-px h-3 bg-slate-700" />
+                    <Banknote className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-xs font-bold text-emerald-400">{formatCurrency(todayMetrics.earnings)}</span>
+                </div>
+
+                {/* Online toggle */}
+                <button
                     onClick={() => setIsOnline(!isOnline)}
                     className={cn(
-                        "rounded-full px-5 py-2 flex flex-col items-center justify-center shadow-xl border transition-colors",
-                        isOnline ? "bg-slate-900 border-slate-800" : "bg-rose-50 border-rose-200 text-rose-900"
+                        "w-11 h-11 rounded-full flex items-center justify-center shadow-md border transition-all active:scale-95",
+                        isOnline ? "bg-emerald-500 border-emerald-400 shadow-emerald-500/30" : "bg-slate-800 border-slate-700"
                     )}
+                    title={isOnline ? "Ficar Offline" : "Ficar Online"}
                 >
-                    <div className={cn(
-                        "text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1",
-                        isOnline ? "text-emerald-400" : "text-rose-600"
-                    )}>
-                        <div className={cn(
-                            "w-1.5 h-1.5 rounded-full",
-                            isOnline ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
-                        )} />
-                        {isOnline ? "Online" : "Offline"}
-                    </div>
-                    <div className={cn(
-                        "font-black text-sm truncate max-w-[120px]",
-                        isOnline ? "text-white" : "text-rose-900"
-                    )}>
-                        {user?.name || "Entregador"}
-                    </div>
+                    <Power className={cn("w-5 h-5", isOnline ? "text-white" : "text-slate-500")} />
                 </button>
             </header>
 
-            {/* Floating Top Warning if empty */}
+            {/* ── Idle State ── */}
             {!activeDelivery && (
-                <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
+                <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 pb-12 gap-4">
                     {isOnline ? (
                         <>
-                            <div className="w-24 h-24 rounded-full bg-slate-800/80 backdrop-blur-xl flex items-center justify-center mb-6 shadow-2xl border border-slate-700">
-                                <div className="w-4 h-4 rounded-full bg-indigo-500 animate-ping" />
+                            <div className="relative w-28 h-28 flex items-center justify-center mb-2">
+                                <div className="absolute inset-0 rounded-full bg-emerald-500/10 animate-ping" />
+                                <div className="absolute inset-2 rounded-full bg-emerald-500/10 animate-ping [animation-delay:0.3s]" />
+                                <div className="w-20 h-20 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow-2xl z-10">
+                                    <Bike className="w-9 h-9 text-emerald-400" />
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Aguardando pedido...</h2>
-                            <p className="text-slate-400 text-center font-medium">O gestor irá atribuir-lhe uma entrega em breve.</p>
+                            <h2 className="text-2xl font-black tracking-tight">Pronto para Entregar</h2>
+                            <p className="text-slate-400 text-sm text-center max-w-[240px] leading-relaxed">
+                                Aguardando atribuição pelo gestor. Fique por perto do restaurante.
+                            </p>
                         </>
                     ) : (
                         <>
-                            <div className="w-24 h-24 rounded-full bg-slate-800/80 backdrop-blur-xl flex items-center justify-center mb-6 shadow-2xl border border-slate-700">
-                                <Power className="w-8 h-8 text-rose-500" />
+                            <div className="w-20 h-20 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow-2xl mb-2">
+                                <Power className="w-9 h-9 text-rose-500" />
                             </div>
-                            <h2 className="text-2xl font-bold mb-2 tracking-tight">Você está Offline</h2>
-                            <p className="text-slate-400 text-center font-medium">Fique online para começar a receber pedidos do restaurante.</p>
+                            <h2 className="text-2xl font-black tracking-tight">Turno Pausado</h2>
+                            <p className="text-slate-400 text-sm text-center max-w-[240px]">
+                                Liga-te para receber pedidos.
+                            </p>
+                            <button
+                                onClick={() => setIsOnline(true)}
+                                className="mt-2 px-8 py-3 bg-emerald-500 text-white font-bold rounded-full shadow-lg active:scale-95 transition-transform"
+                            >
+                                Ligar
+                            </button>
                         </>
                     )}
                 </div>
             )}
 
-            {/* Bottom Sheet for Active Delivery */}
+            {/* ── Active Delivery Sheet ── */}
             {activeDelivery && (
-                <div className="relative z-20 mt-auto bg-slate-900 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2.5rem] border-t border-slate-800 overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="relative z-20 mt-auto bg-slate-900 rounded-t-[2rem] border-t border-slate-800 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[88vh] overflow-hidden">
+
                     {/* Handle */}
-                    <div className="w-full flex justify-center pt-4 pb-2 shrink-0">
-                        <div className="w-12 h-1.5 bg-slate-700 rounded-full" />
+                    <div className="flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="w-10 h-1 bg-slate-700 rounded-full" />
                     </div>
 
-                    <div className="px-6 pb-6 overflow-y-auto overflow-x-hidden flex-1 no-scrollbar">
+                    {/* Step progress */}
+                    <div className="px-6 pt-3 pb-4 shrink-0 border-b border-slate-800">
+                        <StepIndicator status={activeDelivery.status} />
+                    </div>
 
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6 mt-4">
+                    <div className="px-6 pt-4 pb-2 overflow-y-auto flex-1">
+
+                        {/* Main info row */}
+                        <div className="flex justify-between items-start mb-5">
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                    {activeDelivery.status === "preparing" ? "A Preparar" : activeDelivery.status === "ready" ? "Coleta Necessária" : "Entrega em Andamento"}
-                                </div>
-                                <h2 className="text-4xl font-black text-white tracking-tighter">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
+                                    {activeDelivery.status === "preparing" ? "A Preparar" :
+                                     activeDelivery.status === "ready" ? "Pronto — Ir ao Balcão" :
+                                     "Em Rota"}
+                                </p>
+                                <h2 className="text-4xl font-black tracking-tighter leading-none">
                                     {activeDelivery.status === "delivering"
-                                        ? (distanceInfo ? `${distanceInfo.minutes} min` : "...")
+                                        ? (distanceInfo ? `${distanceInfo.minutes} min` : "—")
                                         : "Balcão"}
                                 </h2>
-                                <p className="text-slate-300 font-medium text-lg mt-1">
-                                    {activeDelivery.status === "preparing"
-                                        ? "Aguarde confeção"
-                                        : activeDelivery.status === "ready"
-                                        ? "Dirija-se ao restaurante"
-                                        : distanceInfo ? `${distanceInfo.km} de distância` : "Calculando rota..."}
+                                <p className="text-slate-400 font-medium mt-1">
+                                    {activeDelivery.status === "preparing" ? "Aguarde a cozinha" :
+                                     activeDelivery.status === "ready" ? "Dirija-se ao restaurante" :
+                                     distanceInfo ? `${distanceInfo.km} de distância` : "Calculando rota..."}
                                 </p>
                             </div>
+
                             {activeDelivery.status === "delivering" && activeDelivery.deliveryAddress ? (
                                 <button
-                                    onClick={() => openGoogleMaps(activeDelivery.deliveryAddress!)}
-                                    className="w-16 h-16 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-95 flex flex-col items-center justify-center shadow-lg shadow-blue-700/40 transition-all"
-                                    title="Abrir no Google Maps"
+                                    onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(activeDelivery.deliveryAddress!)}&travelmode=driving`, '_blank')}
+                                    className="w-14 h-14 rounded-2xl bg-blue-600 flex flex-col items-center justify-center shadow-lg active:scale-95 transition-transform"
                                 >
-                                    <Navigation className="w-6 h-6 text-white mb-0.5" />
-                                    <span className="text-[9px] font-bold text-blue-100 uppercase tracking-wider">Maps</span>
+                                    <Navigation className="w-5 h-5 text-white mb-0.5" />
+                                    <span className="text-[9px] font-bold text-blue-100 uppercase">Maps</span>
                                 </button>
                             ) : (
-                                <div className="w-16 h-16 rounded-2xl bg-amber-500 flex flex-col items-center justify-center shadow-lg">
-                                    <Store className="w-6 h-6 text-white mb-1" />
+                                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                                    <Store className="w-6 h-6 text-amber-400" />
                                 </div>
                             )}
                         </div>
 
-                        {/* Customer Info Card Uber Style */}
+                        {/* Customer Card */}
                         {activeDelivery.status === "delivering" ? (
-                            <div className="bg-slate-800 border-l-4 border-l-blue-500 rounded-r-2xl p-5 mb-4 shadow-md animate-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-bold text-white mb-2">{activeDelivery.customerName}</h3>
-
+                            <div className="bg-slate-800 rounded-2xl p-4 mb-4 border border-slate-700/50">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">{activeDelivery.customerName || "Cliente"}</h3>
                                         {activeDelivery.paymentStatus === "paid" ? (
-                                            <span className="inline-flex items-center gap-1 bg-slate-900 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase">
-                                                Pago via App
-                                            </span>
+                                            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Pago via App</span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 bg-rose-500/20 text-rose-400 text-xs font-bold px-3 py-1 rounded-full uppercase border border-rose-500/30">
+                                            <span className="text-[11px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
                                                 Cobrar {formatCurrency(activeDelivery.totalAmount + (activeDelivery.deliveryFee || 0))}
                                             </span>
                                         )}
                                     </div>
                                     {activeDelivery.customerPhone && (
-                                        <a href={`tel:${activeDelivery.customerPhone}`} className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-white active:bg-slate-600 transition-colors shrink-0 shadow-sm ml-4">
-                                            <PhoneCall className="w-5 h-5" />
+                                        <a
+                                            href={`tel:${activeDelivery.customerPhone}`}
+                                            className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center active:bg-slate-600 transition-colors"
+                                        >
+                                            <PhoneCall className="w-4 h-4 text-white" />
                                         </a>
                                     )}
                                 </div>
-
-                                <div className="flex items-start gap-3 mt-4 pt-4 border-t border-slate-700">
-                                    <MapPin className="w-6 h-6 text-blue-400 shrink-0 mt-0.5" />
+                                <div className="flex items-start gap-2.5 pt-3 border-t border-slate-700/60">
+                                    <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-base font-medium text-slate-100 leading-snug">
-                                            {activeDelivery.deliveryAddress}
-                                        </p>
-
-                                        {/* Dynamic delivery note from customer */}
-                                        {activeDelivery.deliveryNote ? (
-                                            <div className="mt-2 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                                                <MessageSquare className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                                                <p className="text-sm text-amber-200 font-medium leading-snug">{activeDelivery.deliveryNote}</p>
+                                        <p className="text-sm font-medium text-slate-200 leading-snug">{activeDelivery.deliveryAddress}</p>
+                                        {activeDelivery.deliveryNote && (
+                                            <div className="mt-2 flex items-start gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2">
+                                                <MessageSquare className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                                <p className="text-xs text-amber-200 leading-snug">{activeDelivery.deliveryNote}</p>
                                             </div>
-                                        ) : null}
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-amber-500/10 border-l-4 border-l-amber-500 rounded-r-2xl p-5 mb-4 shadow-md text-amber-200/80 italic animate-in fade-in">
-                                <p className="font-medium text-amber-500 mb-1">Destino Oculto.</p>
-                                <p className="text-sm">Confirme a retirada do pedido no balcão do restaurante para liberar o endereço do cliente.</p>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-4">
+                                <p className="font-bold text-amber-400 text-sm mb-1">Endereço bloqueado</p>
+                                <p className="text-xs text-amber-200/70 leading-relaxed">
+                                    Confirme a retirada no balcão para desbloquear o endereço do cliente.
+                                </p>
                             </div>
                         )}
 
-                        {/* Order Details */}
-                        <div className="bg-slate-800/50 rounded-2xl p-5 mb-2">
-                            <div className="text-xs font-bold text-slate-500 tracking-wider uppercase mb-3 flex items-center justify-between">
-                                <span>Pedido #{activeDelivery.orderNumber || activeDelivery.id.split('_')[2]}</span>
-                                <span>{activeDelivery.items.length} itens</span>
+                        {/* Order items */}
+                        <div className="bg-slate-800/60 rounded-2xl p-4 mb-4">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Package className="w-3.5 h-3.5" />
+                                    Pedido #{activeDelivery.orderNumber || activeDelivery.id.substring(0, 6).toUpperCase()}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{activeDelivery.items.length} itens</span>
                             </div>
-                            <div className="space-y-3">
+                            <div className="space-y-2.5">
                                 {activeDelivery.items.map((item, idx) => (
-                                    <div key={idx} className="flex gap-3 text-base">
-                                        <span className="font-bold text-slate-300 bg-slate-700 w-6 h-6 flex items-center justify-center rounded">{item.quantity}</span>
-                                        <span className="text-slate-200 font-medium truncate">{item.name}</span>
+                                    <div key={idx} className="flex items-center gap-3">
+                                        <span className="w-6 h-6 rounded-lg bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center shrink-0">{item.quantity}</span>
+                                        <span className="text-sm text-slate-200 font-medium truncate">{item.name}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
+                        {/* Queue */}
+                        {queuedDeliveries.length > 0 && (
+                            <div className="bg-slate-800/40 rounded-2xl p-4 mb-2 border border-slate-700/30">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                                    Na fila ({queuedDeliveries.length})
+                                </p>
+                                {queuedDeliveries.map(o => (
+                                    <div key={o.id} className="flex items-center justify-between py-2 border-t border-slate-700/40 first:border-0">
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-300">{o.customerName || "Cliente"}</p>
+                                            <p className="text-xs text-slate-500 truncate max-w-[200px]">{o.deliveryAddress || "—"}</p>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Action Button Area */}
-                    <div className="p-6 bg-slate-900 border-t border-slate-800 shrink-0 pb-10">
+                    {/* ── Action Button ── */}
+                    <div className="px-6 pt-3 pb-8 bg-slate-900 border-t border-slate-800 shrink-0">
                         {activeDelivery.status === "preparing" ? (
-                            <div className="w-full h-[72px] bg-slate-800 rounded-full flex flex-col items-center justify-center border border-amber-500/20 shadow-inner">
-                                <span className="text-amber-500 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin" /> Em Confeção
+                            <div className="w-full h-16 bg-slate-800 rounded-2xl flex flex-col items-center justify-center border border-amber-500/20">
+                                <span className="text-amber-400 font-bold text-sm flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Em Preparação
                                 </span>
-                                <span className="text-xs text-slate-400 mt-0.5">Aguardando a Cozinha</span>
+                                <span className="text-xs text-slate-500 mt-0.5">Aguardando a cozinha</span>
                             </div>
                         ) : activeDelivery.status === "ready" ? (
                             <button
                                 onClick={() => handlePickup(activeDelivery.id)}
                                 disabled={confirmingId === activeDelivery.id}
-                                className="w-full h-[72px] bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-900 font-bold text-lg rounded-full shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
+                                className="w-full h-16 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-900 font-black text-base rounded-2xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all disabled:opacity-60"
                             >
-                                {confirmingId === activeDelivery.id ? (
-                                    <><Loader2 className="w-6 h-6 animate-spin" /> Confirmando...</>
-                                ) : (
-                                    <><Store className="w-6 h-6" /> Retirado no Balcão</>
-                                )}
+                                {confirmingId === activeDelivery.id
+                                    ? <><Loader2 className="w-5 h-5 animate-spin" /> Confirmando...</>
+                                    : <><Store className="w-5 h-5" /> Retirei no Balcão</>
+                                }
                             </button>
                         ) : (
-                            <SwipeToConfirm 
+                            <SwipeToConfirm
                                 onConfirm={() => handleConfirmDelivery(activeDelivery.id)}
                                 isConfirming={confirmingId === activeDelivery.id}
                             />
                         )}
                     </div>
-
                 </div>
             )}
 
-            {/* Profile Overlay */}
+            {/* ── Profile Overlay ── */}
             {isProfileOpen && (
-                <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col animate-in slide-in-from-bottom-full duration-300">
-                    <div className="p-6 flex justify-between items-center shadow-sm z-10 bg-slate-900">
-                        <h2 className="text-2xl font-black text-white">Minha Conta</h2>
-                        <button onClick={() => setIsProfileOpen(false)} className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-300 active:bg-slate-700 transition-colors">
-                            <X className="w-6 h-6" />
+                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col animate-in slide-in-from-bottom-full duration-300">
+                    {/* Header */}
+                    <div className="px-6 pt-8 pb-6 flex items-center gap-4 border-b border-slate-800">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl font-black text-white">
+                            {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-xl font-black text-white truncate">{user?.name || "Entregador"}</h2>
+                            <p className="text-sm text-slate-400 font-medium">Entregador • Turno ativo</p>
+                        </div>
+                        <button
+                            onClick={() => setIsProfileOpen(false)}
+                            className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center active:bg-slate-700 transition-colors"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {/* Metrics Cards */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 flex flex-col justify-center">
-                                <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-3" />
+                    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                <CheckCircle2 className="w-7 h-7 text-emerald-400 mb-2.5" />
                                 <div className="text-3xl font-black text-white">{todayMetrics.count}</div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Entregas Hoje</div>
+                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Entregas Hoje</div>
                             </div>
-                            <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 flex flex-col justify-center">
-                                <Banknote className="w-8 h-8 text-emerald-400 mb-3" />
-                                <div className="text-3xl font-black text-white">{formatCurrency(todayMetrics.earnings)}</div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Acumulado Hoje</div>
+                            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                <Banknote className="w-7 h-7 text-emerald-400 mb-2.5" />
+                                <div className="text-2xl font-black text-emerald-400">{formatCurrency(todayMetrics.earnings)}</div>
+                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Ganhos Hoje</div>
                             </div>
                         </div>
 
-                        {/* Recent History */}
-                        <div className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700">
-                            <div className="p-4 border-b border-slate-700 flex items-center gap-2">
-                                <History className="w-5 h-5 text-slate-300" />
-                                <h3 className="font-bold text-white">Últimas Entregas</h3>
+                        {/* History */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+                                <History className="w-4 h-4 text-slate-400" />
+                                <span className="font-bold text-sm text-white">Histórico de Hoje</span>
                             </div>
-                            <div className="divide-y divide-slate-700">
-                                {todayMetrics.history.length === 0 ? (
-                                    <div className="p-6 text-center text-slate-400 text-sm">Nenhuma entrega finalizada hoje.</div>
-                                ) : todayMetrics.history.map(order => (
-                                    <div key={order.id} className="p-4 flex justify-between items-center">
-                                        <div>
-                                            <div className="font-bold text-slate-200">Pedido #{order.orderNumber || order.id.split('_')[2]}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                        </div>
-                                        <div className="font-bold text-emerald-400">+{formatCurrency(order.deliveryFee || 0)}</div>
+                            {todayMetrics.history.length === 0 ? (
+                                <div className="py-8 text-center text-slate-500 text-sm">Nenhuma entrega finalizada hoje.</div>
+                            ) : todayMetrics.history.map(o => (
+                                <div key={o.id} className="px-4 py-3 flex justify-between items-center border-t border-slate-800/60 first:border-0">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-200">
+                                            #{o.orderNumber || o.id.substring(0, 6).toUpperCase()}
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            {new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {o.customerName ? ` • ${o.customerName}` : ""}
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
+                                    <span className="text-sm font-bold text-emerald-400">+{formatCurrency(o.deliveryFee || 0)}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="p-6 border-t border-slate-800 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] bg-slate-900 mt-auto">
-                        <button 
-                            onClick={() => {
-                                if (confirm("Tem certeza que deseja fechar seu turno (sair da conta)?")) {
-                                    logout();
-                                }
-                            }}
-                            className="w-full h-14 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 text-rose-500 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-500/20 transition-colors"
+                    <div className="px-6 pb-10 pt-4 border-t border-slate-800 bg-slate-950">
+                        <button
+                            onClick={() => { if (confirm("Fechar turno e sair?")) logout(); }}
+                            className="w-full h-13 py-3.5 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-500/20 transition-colors"
                         >
-                            <LogOut className="w-5 h-5" /> Fazer Logout
+                            <LogOut className="w-4 h-4" /> Fechar Turno
                         </button>
                     </div>
                 </div>
