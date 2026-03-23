@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { validarNIF } from "@/lib/nif";
 import { sendWelcomeEmail } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
     try {
@@ -78,6 +79,16 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin.from('restaurants').delete().eq('id', restData.id);
             return NextResponse.json({ error: 'Erro ao criar perfil: ' + profileErr.message }, { status: 500 });
         }
+
+        logAudit({
+            restaurantId: restData.id,
+            userId:       userId,
+            action:       "account.created",
+            entity:       "restaurant",
+            entityId:     restData.id,
+            metadata:     { plan, restaurantName },
+            ipAddress:    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+        });
 
         // Enviar email de boas-vindas (fire-and-forget)
         sendWelcomeEmail({

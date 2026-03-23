@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(node:*)",
-      "Bash(find /Users/tiago/.gemini/antigravity/playground/orbital-event -name *.ts -newer /Users/tiago/.gemini/antigravity/playground/orbital-event/package.json -not -path */node_modules/* -not -path */.next/*)"
+      "Bash(find /Users/tiago/.gemini/antigravity/playground/orbital-event -name *.ts -newer /Users/tiago/.gemini/antigravity/playground/orbital-event/package.json -not -path */node_modules/* -not -path */.next/*)",
+      "Bash(npx tsc:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"fix\\(superadmin\\): bypassar RLS via API route com supabaseAdmin:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"fix\\(superadmin\\): mostrar erro de carregamento no UI em vez de silencioso:*)",
+      "Bash(npm run:*)",
+      "Bash(git commit:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\(''''dependencies'''',{}\\), **d.get\\(''''devDependencies'''',{}\\)}; [print\\(k,v\\) for k,v in sorted\\(deps.items\\(\\)\\) if any\\(x in k for x in [''''sentry'''',''''rate'''',''''upstash'''',''''redis'''',''''zod'''',''''limiter'''']\\)]\")"
     ]
   }
 }

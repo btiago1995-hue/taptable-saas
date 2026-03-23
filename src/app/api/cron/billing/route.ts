@@ -4,13 +4,19 @@ import { sendRenewalReminder, sendSuspensionNotice } from "@/lib/email";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
- * POST /api/cron/billing
+ * GET /api/cron/billing
  * Executado diariamente pelo Vercel Cron às 08:00 UTC.
- * Protegido por CRON_SECRET — só o Vercel consegue chamar.
+ * Protegido por CRON_SECRET — Vercel envia Authorization: Bearer <CRON_SECRET>.
  */
-export async function GET(_req: NextRequest) {
-  // Nota: verificação de CRON_SECRET omitida — plano Hobby da Vercel não envia
-  // o header Authorization no botão "Run". O endpoint é idempotente e inofensivo.
+export async function GET(req: NextRequest) {
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth    = req.headers.get("authorization");
+    const cronHdr = req.headers.get("x-cron-secret");
+    if (auth !== `Bearer ${secret}` && cronHdr !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
   try {
     const result = await checkAndProcessOverdue();
 

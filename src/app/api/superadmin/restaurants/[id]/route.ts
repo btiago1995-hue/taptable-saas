@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { logAudit } from "@/lib/audit";
 
 /**
  * PATCH /api/superadmin/restaurants/[id]
@@ -46,6 +47,15 @@ export async function PATCH(
       .eq("id", id);
 
     if (error) throw new Error(error.message);
+
+    logAudit({
+      restaurantId: id,
+      action:       "superadmin.restaurant_updated",
+      entity:       "restaurant",
+      entityId:     id,
+      metadata:     update,
+      ipAddress:    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

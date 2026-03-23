@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createAndPayInvoice } from "@/lib/billing";
 import { sendPaymentConfirmation } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 /**
  * POST /api/billing/record-payment
@@ -63,6 +64,15 @@ export async function POST(req: NextRequest) {
         }).catch(err => console.error("[billing] Erro ao enviar email de confirmação:", err));
       }
     }
+
+    logAudit({
+      restaurantId: restaurantId,
+      action:       "payment.confirmed",
+      entity:       "subscription",
+      entityId:     invoiceId,
+      metadata:     { amount, method, reference, newExpiresAt },
+      ipAddress:    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+    });
 
     return NextResponse.json({ success: true, invoiceId, newExpiresAt });
 
