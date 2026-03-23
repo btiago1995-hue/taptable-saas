@@ -46,27 +46,40 @@ Feature access is controlled by `usePlanGate(feature)` from [src/lib/planGate.ts
 
 ### Fiscal Integration (E-Fatura / DNRE)
 
-[src/lib/efatura.ts](src/lib/efatura.ts) generates IUD codes (45-char document IDs for Cabo Verde tax compliance). IUD structure: `NIF(9) + DocType(2) + Year(4) + Sequence(8) + Hash(22)`. Sequences are tracked in the `efatura_sequences` table using an atomic PL/pgSQL function to prevent race conditions. The hash currently uses HMAC-SHA256 (dev); production requires RSA-SHA1.
+[src/lib/efatura.ts](src/lib/efatura.ts) generates IUD codes (45-char document IDs for Cabo Verde tax compliance). IUD structure: `NIF(9) + DocType(2) + Year(4) + Sequence(8) + Hash(22)`. Sequences are tracked in the `efatura_sequences` table via an atomic PL/pgSQL RPC (`efatura_next_sequence`).
+
+**Hash algorithm is controlled by `EFATURA_ENV`:**
+- `dev` (default) — HMAC-SHA256, no certificate needed
+- `sandbox` / `production` — RSA-SHA1 via [src/lib/efatura-rsa.ts](src/lib/efatura-rsa.ts), requires `EFATURA_PRIVATE_KEY` env var (PEM from DNRE). **Do not change the signing logic** — it switches automatically via env.
+
+**NIF validation** for CV and PT is in [src/lib/nif.ts](src/lib/nif.ts) (`validarNIF`, `validarNIFCV`, `validarNIFPT`).
 
 ### Payment Gateways
 
-- **Vinti4Net** (primary) — local gateway for CV/PT. Fingerprint is SHA-512 of base64-encoded params. Webhook at `/api/vinti4/webhook`.
-- **Stripe** — secondary, less prominent in codebase.
+**Vinti4Net** (primary) — local gateway for CV/PT (SISP). Fingerprint is SHA-512 of base64-encoded params ([src/lib/vinti4.ts](src/lib/vinti4.ts)).
+- Checkout: `/api/vinti4/checkout` — generates form params, stores `merchant_ref` in the order
+- Webhook: `/api/vinti4/webhook` — verifies fingerprint, looks up order by `merchant_ref` (direct DB query), has replay-attack protection (10-min timestamp window) and idempotency guard
+
+**Stripe** — secondary, less prominent in codebase.
 
 ### Key Utilities
 
-- `src/lib/utils.ts` — `formatCurrency`, `cn` (Tailwind class merging), shared helpers
-- `src/lib/offline-queue.ts` — queues orders when offline; synced via `/api/orders/sync`
-- `src/lib/notifications.ts` — push/email notification helpers
+- [src/lib/utils.ts](src/lib/utils.ts) — `formatCurrency`, `cn` (Tailwind class merging)
+- [src/lib/offline-queue.ts](src/lib/offline-queue.ts) — queues orders offline (localStorage); syncs via `/api/orders/sync`. Orders that fail 5+ times move to a dead-letter queue (`getDeadLetterQueue()`).
+- [src/lib/nif.ts](src/lib/nif.ts) — NIF validation for CV and PT
+- [src/lib/notifications.ts](src/lib/notifications.ts) — push/email notification helpers
 
 ### Database Migrations
 
-SQL migrations live at the project root:
-- `supabase_efatura_migration.sql`
-- `supabase_rls_migration.sql`
-- `supabase_subscriptions_features_migration.sql`
+SQL migrations live at the project root. Apply manually via Supabase dashboard SQL Editor — there is no automated runner. **Order matters:**
 
-Apply manually via Supabase dashboard or CLI. There is no automated migration runner.
+| File | Purpose |
+|---|---|
+| `supabase_rls_migration.sql` | Row-Level Security policies |
+| `supabase_efatura_migration.sql` | E-Fatura sequences table + RPCs |
+| `supabase_subscriptions_features_migration.sql` | Plan/feature matrix |
+| `supabase_vinti4_merchant_ref_migration.sql` | `merchant_ref` column + index on `orders` |
+| `supabase_efatura_atomic_migration.sql` | Audit columns on `efatura_sequences` |
 
 ### Localization
 
