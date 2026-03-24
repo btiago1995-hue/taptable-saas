@@ -131,7 +131,9 @@ export default function SuperAdminDashboard() {
       setFetchError("");
 
       // Usa API route com supabaseAdmin para bypassar RLS e ver todos os tenants
-      const res = await fetch("/api/superadmin/restaurants");
+      const res = await fetch("/api/superadmin/restaurants", {
+        headers: { "x-superadmin-secret": process.env.NEXT_PUBLIC_SUPERADMIN_SECRET || "" },
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       const { restaurants: restData, orders: orderData } = json;
@@ -195,7 +197,10 @@ export default function SuperAdminDashboard() {
   const patchRestaurant = async (id: string, update: Record<string, unknown>) => {
     const res = await fetch(`/api/superadmin/restaurants/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-superadmin-secret": process.env.NEXT_PUBLIC_SUPERADMIN_SECRET || "",
+      },
       body: JSON.stringify(update),
     });
     if (!res.ok) {

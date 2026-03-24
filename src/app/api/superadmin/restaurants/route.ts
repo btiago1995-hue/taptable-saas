@@ -1,12 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+
+function isSuperadmin(req: NextRequest): boolean {
+  const secret = process.env.SUPERADMIN_SECRET;
+  if (!secret) return false; // Must be configured
+  return req.headers.get("x-superadmin-secret") === secret;
+}
 
 /**
  * GET /api/superadmin/restaurants
  * Devolve todos os restaurantes com stats de pedidos.
  * Usa supabaseAdmin para bypassar RLS — apenas para uso interno do superadmin.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isSuperadmin(req)) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
   try {
     // Tenta com subscription_status (requer migration billing aplicada)
     // Se falhar, tenta sem essa coluna (migration ainda não aplicada)

@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 
+function isSuperadmin(req: NextRequest): boolean {
+  const secret = process.env.SUPERADMIN_SECRET;
+  if (!secret) return false;
+  return req.headers.get("x-superadmin-secret") === secret;
+}
+
 /**
  * PATCH /api/superadmin/restaurants/[id]
  * Mutações de superadmin sobre um restaurante (bypass RLS via supabaseAdmin).
@@ -16,6 +22,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isSuperadmin(req)) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
   try {
     const { id } = await params;
     if (!id) {
