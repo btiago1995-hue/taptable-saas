@@ -81,7 +81,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                 // Fetch items — ordered by category sort for consistency
                 const { data: dbItems, error: itemsErr } = await supabase
                     .from('menu_items')
-                    .select('id, name, description, price, status, image_url, track_stock, stock_quantity, menu_categories(name, sort_order)')
+                    .select('id, name, description, price, status, image_url, menu_categories(name, sort_order)')
                     .eq('restaurant_id', restaurantId)
                     .neq('status', 'hidden')
                     .order('name', { ascending: true });

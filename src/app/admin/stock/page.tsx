@@ -28,11 +28,14 @@ export default function StockPage() {
     setLoading(true);
     const { data } = await supabase
       .from("menu_items")
-      .select("id, name, category, status, track_stock, stock_quantity")
+      .select("id, name, status, track_stock, stock_quantity, menu_categories(name)")
       .eq("restaurant_id", user.restaurantId)
-      .order("category")
       .order("name");
-    setItems((data as StockItem[]) || []);
+    const mapped = (data || []).map((i: any) => ({
+      ...i,
+      category: (Array.isArray(i.menu_categories) ? i.menu_categories[0]?.name : i.menu_categories?.name) || '',
+    }));
+    setItems(mapped as StockItem[]);
     setLoading(false);
   }, [user?.restaurantId]);
 
