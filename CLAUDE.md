@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Memória Persistente
+
+**No início de cada sessão**, ler obrigatoriamente:
+- [memory/user.md](memory/user.md) — perfil e contexto do utilizador
+- [memory/preferences.md](memory/preferences.md) — preferências de trabalho e comunicação
+- [memory/decisions.md](memory/decisions.md) — decisões técnicas e de produto já tomadas
+- [memory/people.md](memory/people.md) — pessoas e entidades relevantes
+
+**Durante e no final de cada sessão**, actualizar os ficheiros relevantes quando:
+- Uma nova decisão técnica ou de produto for tomada → `decisions.md`
+- Uma nova entidade/contacto for identificada → `people.md`
+- O utilizador expressar uma preferência nova → `preferences.md`
+- O contexto do utilizador mudar → `user.md`
+
+Estes ficheiros são a fonte de verdade do projecto entre sessões. Mantê-los actualizados é prioritário.
+
 ## Commands
 
 ```bash
