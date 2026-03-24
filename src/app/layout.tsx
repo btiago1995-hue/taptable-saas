@@ -17,15 +17,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dineo | Servyx",
-  description: "B2B Restaurant SaaS platform by Servyx",
+  title: "Dineo — Gestão de Restaurantes",
+  description: "Plataforma de gestão para restaurantes em Cabo Verde.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Dineo",
+    startupImage: "/apple-touch-icon.png",
   },
-  themeColor: "#0f172a",
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192x192.png",  sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

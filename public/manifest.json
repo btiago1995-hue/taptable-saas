@@ -1,11 +1,15 @@
 {
-  "name": "Dineo SaaS",
+  "name": "Dineo — Gestão de Restaurantes",
   "short_name": "Dineo",
-  "description": "A melhor experiência de menu digital e gestão de restaurantes.",
-  "start_url": "/",
+  "description": "Plataforma de gestão para restaurantes em Cabo Verde.",
+  "start_url": "/admin/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f8fafc",
-  "theme_color": "#0f172a",
+  "theme_color": "#16a34a",
+  "lang": "pt",
+  "categories": ["business", "food"],
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -17,7 +21,36 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cozinha",
+      "short_name": "Cozinha",
+      "description": "Ver pedidos na cozinha",
+      "url": "/admin/kitchen",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "POS",
+      "short_name": "POS",
+      "description": "Ponto de venda",
+      "url": "/admin/cashier",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Entregas",
+      "short_name": "Entregas",
+      "description": "Gestão de entregas",
+      "url": "/admin/delivery",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
