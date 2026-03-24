@@ -92,7 +92,7 @@ export function BaseTemplate({ preview, children }: BaseProps) {
           <Text style={{ fontSize: 12, color: colors.slate400, textAlign: "center", margin: 0 }}>
             Dineo · Plataforma de Gestão para Restaurantes
             <br />
-            Cabo Verde &amp; Portugal
+            Cabo Verde
             <br />
             <a href="mailto:suporte@dineo.cv" style={{ color: colors.slate400 }}>suporte@dineo.cv</a>
           </Text>
