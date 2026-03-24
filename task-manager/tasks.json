@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1774331583083",
+    "title": "Paginas do Menu Lentas",
+    "description": "Verifique as paginas do menu publico estao lentas de caregar ",
+    "priority": "low",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:53:03.084Z"
+  },
+  {
+    "id": "1774331694168",
+    "title": "Enviar email à DNRE para homologação",
+    "description": "Email para helpdesk@efatura.cv a pedir homologação do Dineo como software fiscal SaaS. Template já preparado.",
+    "priority": "high",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.168Z"
+  },
+  {
+    "id": "1774331694467",
+    "title": "Comprar domínio dineo.cv",
+    "description": "Comprar em Dynadot.com por $118/ano. Após compra configurar DNS para Vercel e Resend.",
+    "priority": "high",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.467Z"
+  },
+  {
+    "id": "1774331694489",
+    "title": "Configurar DNS do dineo.cv após compra",
+    "description": "Apontar domínio para Vercel + adicionar 3 registos DNS no Resend (DKIM, SPF MX, SPF TXT) para verificar domínio de email.",
+    "priority": "medium",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.489Z"
+  },
+  {
+    "id": "1774331694515",
+    "title": "Contactar SISP para parceria Vinti4",
+    "description": "Após homologação DNRE, abordar SISP (sisp@sisp.cv) para integração oficial como parceiro certificado Vinti4. Argumento: cada restaurante Dineo = mais volume na rede Vinti4.",
+    "priority": "medium",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.515Z"
+  },
+  {
+    "id": "1774331694536",
+    "title": "Arranjar primeiros 3-5 restaurantes piloto em CV",
+    "description": "Clientes reais para testar o produto em produção antes do lançamento oficial. Validar fluxo completo: registo → POS → pagamento → fatura.",
+    "priority": "high",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.536Z"
+  },
+  {
+    "id": "1774331694558",
+    "title": "Corrigir lentidão nas páginas do menu público",
+    "description": "Investigar causa da lentidão no /p/[restaurante_id]. Verificar queries Supabase, imagens não optimizadas, e tempo de resposta da API.",
+    "priority": "low",
+    "status": "pending",
+    "createdAt": "2026-03-24T05:54:54.558Z"
+  }
+]

@@ -68,7 +68,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                 // Fetch categories
                 const { data: catNodes, error: catErr } = await supabase
                     .from('menu_categories')
-                    .select('*')
+                    .select('id, name, sort_order, restaurant_id')
                     .eq('restaurant_id', restaurantId)
                     .order('sort_order', { ascending: true });
 
@@ -81,8 +81,9 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                 // Fetch items — ordered by category sort for consistency
                 const { data: dbItems, error: itemsErr } = await supabase
                     .from('menu_items')
-                    .select('*, menu_categories(name, sort_order)')
+                    .select('id, name, description, price, status, image_url, category, track_stock, stock_quantity, menu_categories(name, sort_order)')
                     .eq('restaurant_id', restaurantId)
+                    .neq('status', 'hidden')
                     .order('name', { ascending: true });
 
                 if (itemsErr) throw itemsErr;
@@ -93,7 +94,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                         name: i.name,
                         price: i.price,
                         status: i.status as any,
-                        category: i.menu_categories?.name || '',
+                        category: (Array.isArray(i.menu_categories) ? i.menu_categories[0]?.name : (i.menu_categories as any)?.name) || '',
                         description: i.description || '',
                         imageUrl: i.image_url || ''
                     }));

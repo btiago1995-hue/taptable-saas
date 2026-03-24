@@ -587,9 +587,9 @@ export default function SuperAdminDashboard() {
                               onChange={e => changePlan(r.id, e.target.value)}
                               className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg px-2.5 py-2 outline-none focus:border-slate-400 disabled:opacity-50 w-full"
                             >
-                              <option value="starter">Starter — 1.490$</option>
-                              <option value="growth">Growth — 2.990$</option>
-                              <option value="pro">PRO — 5.990$</option>
+                              <option value="starter">Starter — 1.490 CVE</option>
+                              <option value="growth">Growth — 2.990 CVE</option>
+                              <option value="pro">PRO — 5.990 CVE</option>
                             </select>
                           </td>
 
@@ -833,9 +833,9 @@ export default function SuperAdminDashboard() {
                   onChange={e => setForm(f => ({ ...f, plan: e.target.value }))}
                   className="w-full border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg px-3 py-2.5 outline-none focus:border-slate-400"
                 >
-                  <option value="starter">Starter — 1.490$/mês</option>
-                  <option value="growth">Growth — 2.990$/mês</option>
-                  <option value="pro">PRO — 5.990$/mês</option>
+                  <option value="starter">Starter — 1.490 CVE/mês</option>
+                  <option value="growth">Growth — 2.990 CVE/mês</option>
+                  <option value="pro">PRO — 5.990 CVE/mês</option>
                 </select>
               </div>
               <FormField

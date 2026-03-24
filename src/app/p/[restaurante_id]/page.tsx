@@ -24,7 +24,7 @@ export default function RestaurantLandingPage() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const { data, error } = await supabase.from('restaurants').select('*').eq('id', restaurantId).single();
+                const { data, error } = await supabase.from('restaurants').select('id, name, slug, is_active, subscription_status').eq('id', restaurantId).single();
                 if (error) throw error;
                 if (data) setRestaurant(data);
             } catch (error) {

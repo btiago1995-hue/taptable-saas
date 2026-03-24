@@ -21,7 +21,7 @@ export default function SuperAdminLayout({
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push("/auth/login");
+        router.push("/admin/login");
       } else if (user.role !== "superadmin") {
         // Not a superadmin, kick them out to their normal dashboard or generic path
         router.push("/admin/dashboard");

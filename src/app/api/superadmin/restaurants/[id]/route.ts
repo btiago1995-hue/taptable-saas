@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit";
 function isSuperadmin(req: NextRequest): boolean {
   const secret = process.env.SUPERADMIN_SECRET;
   if (!secret) return false;
-  return req.headers.get("x-superadmin-secret") === secret;
+  return req.headers.get("x-superadmin-secret") === secret.trim();
 }
 
 /**
