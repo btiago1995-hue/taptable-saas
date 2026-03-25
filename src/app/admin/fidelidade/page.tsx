@@ -130,8 +130,8 @@ export default function FidelidadePage() {
                 )}
               >
                 <span className={cn(
-                  "absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform",
-                  settings.loyalty_active ? "translate-x-7" : "translate-x-1"
+                  "absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform",
+                  settings.loyalty_active ? "translate-x-6" : "translate-x-0"
                 )} />
               </button>
             </div>

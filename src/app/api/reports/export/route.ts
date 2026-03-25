@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { createClient } from "@supabase/supabase-js";
 
 /**
  * GET /api/reports/export?year=2025&month=3&type=sales|items|payments
@@ -11,18 +10,10 @@ import { createClient } from "@supabase/supabase-js";
  */
 
 async function getRestaurantId(req: NextRequest): Promise<string | null> {
-  const supabaseAuth = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const authHeader = req.headers.get("authorization");
-  if (authHeader) {
-    supabaseAuth.auth.setSession({
-      access_token: authHeader.replace("Bearer ", ""),
-      refresh_token: "",
-    });
-  }
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!authHeader) return null;
+  const token = authHeader.replace("Bearer ", "");
+  const { data: { user } } = await supabaseAdmin.auth.getUser(token);
   if (!user) return null;
   const { data: profile } = await supabaseAdmin
     .from("users").select("restaurant_id").eq("id", user.id).single();
