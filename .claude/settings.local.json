@@ -17,5 +17,33 @@
       "WebFetch(domain:www.transfi.com)",
       "WebSearch"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Analisa $ARGUMENTS. Se tool_input.command contiver 'git commit', faz uma revisão rápida das alterações staged: corre 'git diff --cached' e 'git diff --cached --stat'. Verifica se há bugs óbvios, segredos hardcoded, imports quebrados, ou erros de lógica graves. Se não houver problemas sérios, aprova. Se houver um problema crítico, bloqueia e explica. Se o comando NÃO for um git commit, não faças nada e termina imediatamente.",
+            "timeout": 90,
+            "statusMessage": "A rever código antes do commit..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Analisa $ARGUMENTS. Se tool_input.command contiver 'git push', aguarda 90 segundos para o Vercel fazer deploy e depois usa o Browse tool para: 1) navegar para https://orbital-event.vercel.app/admin/dashboard, 2) fazer login com email timeinvest1995@gmail.com e password Ogaitbarros95, 3) verificar se o dashboard carrega sem erros. Reporta o resultado. Se o comando NÃO for um git push, não faças nada.",
+            "timeout": 240,
+            "statusMessage": "A testar deploy em produção..."
+          }
+        ]
+      }
+    ]
   }
 }

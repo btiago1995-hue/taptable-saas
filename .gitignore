@@ -45,3 +45,4 @@ next-env.d.ts
 task-manager/.env
 task-manager/node_modules
 task-manager/tasks.log
+.gstack/

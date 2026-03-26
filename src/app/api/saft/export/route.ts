@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
+import { EFATURA_SW_CODE } from "@/lib/efatura-constants";
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, created_at, total_amount, subtotal, delivery_fee, payment_method, payment_status, customer_name, customer_nif, order_type, order_items(id, name, price, quantity)")
+      .select("id, order_number, created_at, total_amount, subtotal, delivery_fee, payment_method, payment_status, customer_name, customer_nif, order_type, iud, document_hash, document_number, document_type, order_items(id, name, price, quantity)")
       .eq("restaurant_id", restaurantId)
       .gte("created_at", startDate)
       .lte("created_at", endDate)
@@ -70,6 +71,7 @@ export async function GET(req: NextRequest) {
       orders: orders || [],
       year,
       month,
+      swCode: EFATURA_SW_CODE,
     });
 
     return new NextResponse(xml, {
@@ -100,11 +102,13 @@ function generateSaftXml({
   orders,
   year,
   month,
+  swCode,
 }: {
   restaurant: any;
   orders: any[];
   year: number;
   month: number;
+  swCode: string;
 }) {
   const lastDay  = new Date(year, month, 0).getDate();
   const dateCreated = new Date().toISOString().split("T")[0];
@@ -118,11 +122,15 @@ function generateSaftXml({
   const invoiceLines = orders.map((order, idx) => {
     const items      = order.order_items || [];
     const total      = Number(order.total_amount) || 0;
-    const invoiceNum = `FT ${year}/${String(idx + 1).padStart(4, "0")}`;
+    // Usar número do documento E-Fatura se disponível, senão fallback sequencial
+    const invoiceNum = order.document_number || `FS ${year}/${String(idx + 1).padStart(4, "0")}`;
     const invoiceDate = (order.created_at || "").split("T")[0];
 
-    // Determine doc type: FT when customer has NIF, FS otherwise
-    const docType = order.customer_nif ? "FT" : "FS";
+    // Usar tipo do documento E-Fatura se disponível
+    const docType = order.document_type || (order.customer_nif ? "FT" : "FS");
+
+    // Usar IUD real do documento (se gerado), senão "0"
+    const docHash = order.iud || order.document_hash || "0";
 
     const lineItems = items.map((item: any, i: number) => {
       const unitPrice  = Number(item.price) || 0;
@@ -154,15 +162,13 @@ function generateSaftXml({
     return `
     <Invoice>
       <InvoiceNo>${esc(invoiceNum)}</InvoiceNo>
-      <ATCUD>0</ATCUD>
       <DocumentStatus>
         <InvoiceStatus>N</InvoiceStatus>
         <InvoiceStatusDate>${invoiceDate}T00:00:00</InvoiceStatusDate>
         <SourceID>DINEO</SourceID>
         <SourceBilling>P</SourceBilling>
       </DocumentStatus>
-      <Hash>0</Hash>
-      <HashControl>0</HashControl>
+      <Hash>${esc(docHash)}</Hash>
       <Period>${month}</Period>
       <InvoiceDate>${invoiceDate}</InvoiceDate>
       <InvoiceType>${docType}</InvoiceType>
@@ -180,10 +186,12 @@ function generateSaftXml({
     </Invoice>`;
   }).join("\n");
 
+  // Namespace CV — a confirmar com XSD oficial da DNRE (passo 0.7)
+  // TODO: substituir pelo namespace exacto após obter XSD
   return `<?xml version="1.0" encoding="UTF-8"?>
-<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_2.04">
+<AuditFile xmlns="urn:cv:efatura:saft:v1">
   <Header>
-    <AuditFileVersion>1.01_01</AuditFileVersion>
+    <AuditFileVersion>1.0</AuditFileVersion>
     <CompanyID>${esc(restaurant.nif_number || "000000000")}</CompanyID>
     <TaxRegistrationNumber>${esc(restaurant.nif_number || "000000000")}</TaxRegistrationNumber>
     <TaxAccountingBasis>F</TaxAccountingBasis>
@@ -201,7 +209,7 @@ function generateSaftXml({
     <DateCreated>${dateCreated}</DateCreated>
     <TaxEntity>Global</TaxEntity>
     <ProductCompanyTaxID>Dineo by Servyx</ProductCompanyTaxID>
-    <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
+    <SoftwareCertificateNumber>${esc(swCode)}</SoftwareCertificateNumber>
     <ProductID>Dineo SaaS</ProductID>
     <ProductVersion>1.0</ProductVersion>
   </Header>

@@ -22,6 +22,7 @@
  */
 
 import { assinarRSASHA1 } from "./efatura-rsa";
+import { EFATURA_LIMITE_NIF_OBRIGATORIO } from "./efatura-constants";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -304,4 +305,36 @@ export function determinarTipoDocumento(opts: {
   if (opts.isGuiaTransporte) return "GT";
   if (opts.customerNif) return "FT";
   return "FS";
+}
+
+// ---------------------------------------------------------------------------
+// Regra 20.000 CVE — NIF obrigatório
+// ---------------------------------------------------------------------------
+
+/**
+ * Valida se o documento respeita a regra do limite de 20.000 CVE da DNRE.
+ *
+ * Acima deste valor, o NIF do cliente é obrigatório — não é possível emitir
+ * Fatura Simplificada (FS) sem identificar o destinatário.
+ *
+ * @throws {Error} Se o total >= 20.000 CVE e customerNif estiver ausente
+ */
+export function validarRegraLimiteNIF(params: {
+  totalBruto: number;
+  customerNif?: string | null;
+  tipoDocumento: TipoDocumento;
+}): void {
+  const { totalBruto, customerNif, tipoDocumento } = params;
+
+  // Regra aplica-se a FS (sem NIF) quando o valor excede o limite
+  if (
+    tipoDocumento === "FS" &&
+    totalBruto >= EFATURA_LIMITE_NIF_OBRIGATORIO &&
+    !customerNif
+  ) {
+    throw new Error(
+      `NIF do cliente obrigatório para documentos ≥ ${EFATURA_LIMITE_NIF_OBRIGATORIO.toLocaleString("pt-PT")} CVE. ` +
+      `Total do documento: ${totalBruto.toLocaleString("pt-PT")} CVE.`
+    );
+  }
 }

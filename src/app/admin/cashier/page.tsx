@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Search, Banknote, CreditCard, Receipt, Store, AlertCircle, CheckCircle2, History, Clock, RotateCcw, Loader2 } from "lucide-react";
+import { Search, Banknote, CreditCard, Receipt, Store, AlertCircle, CheckCircle2, History, Clock, RotateCcw, Loader2, QrCode, X } from "lucide-react";
 
 type TableData = {
     tableNumber: string;
@@ -38,6 +39,10 @@ export default function AdminCashierPage() {
     const [estornoOrder, setEstornoOrder] = useState<LiveOrder | null>(null);
     const [estornoReason, setEstornoReason] = useState("");
     const [isEstornando, setIsEstornando] = useState(false);
+
+    // E-Fatura QR Code State
+    const [qrCodeData, setQrCodeData] = useState<{ orderId: string; iud: string; numeroDoc: string; url: string } | null>(null);
+    const [isFetchingQr, setIsFetchingQr] = useState<string | null>(null); // orderId being fetched
 
     // Fetch Credit Notes for the day
     useEffect(() => {
@@ -180,6 +185,32 @@ export default function AdminCashierPage() {
             alert("Erro ao emitir estorno: " + error.message);
         } finally {
             setIsEstornando(false);
+        }
+    };
+
+    const handleShowQrCode = async (orderId: string) => {
+        setIsFetchingQr(orderId);
+        try {
+            const { data } = await supabase
+                .from("orders")
+                .select("iud, document_number")
+                .eq("id", orderId)
+                .single();
+
+            if (data?.iud) {
+                setQrCodeData({
+                    orderId,
+                    iud: data.iud,
+                    numeroDoc: data.document_number || data.iud,
+                    url: `https://pe.efatura.cv/dfe/view/${data.iud}`,
+                });
+            } else {
+                alert("E-Fatura ainda não gerada para este pedido.");
+            }
+        } catch {
+            alert("Erro ao buscar dados E-Fatura.");
+        } finally {
+            setIsFetchingQr(null);
         }
     };
 
@@ -512,10 +543,19 @@ export default function AdminCashierPage() {
                                                         <span className="text-red-500 font-bold text-xs uppercase tracking-wider mt-0.5">ESTORNADO</span>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center justify-end gap-3">
+                                                    <div className="flex items-center justify-end gap-2">
                                                         {formatCurrency(order.totalAmount)}
+                                                        <button
+                                                            onClick={() => handleShowQrCode(order.id)}
+                                                            disabled={isFetchingQr === order.id}
+                                                            className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded font-bold transition-all flex items-center gap-1"
+                                                            title="Ver QR Code E-Fatura"
+                                                        >
+                                                            {isFetchingQr === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3 h-3" />}
+                                                            E-Fatura
+                                                        </button>
                                                         {user?.role === 'manager' && (
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setEstornoOrder(order)}
                                                                 className="opacity-0 group-hover:opacity-100 text-xs bg-slate-200 text-slate-600 hover:bg-red-100 hover:text-red-600 px-2 py-1 rounded font-bold transition-all flex items-center gap-1"
                                                                 title="Emitir Nota de Crédito"
@@ -531,6 +571,37 @@ export default function AdminCashierPage() {
                                 </tbody>
                             </table>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* E-Fatura QR Code Modal */}
+            {qrCodeData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                    <QrCode className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900">E-Fatura</h3>
+                                    <p className="text-xs font-medium text-slate-500">{qrCodeData.numeroDoc}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setQrCodeData(null)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 flex flex-col items-center gap-4">
+                            <div className="p-3 bg-white border-2 border-slate-200 rounded-xl">
+                                <QRCodeSVG value={qrCodeData.url} size={200} />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xs font-mono text-slate-500 break-all">{qrCodeData.iud}</p>
+                                <p className="text-xs text-slate-400 mt-1">Verificar em pe.efatura.cv</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

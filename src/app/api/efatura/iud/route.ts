@@ -1,21 +1,24 @@
 /**
  * API Route: POST /api/efatura/iud
  *
- * Gera e persiste um IUD E-Fatura para um pedido.
- * O sequencial é incrementado atomicamente no Supabase para evitar duplicados.
+ * Gera IUD, constrói XML, submete à DNRE e persiste resultado.
+ * Se DNRE inacessível → guarda em efatura_pending_submission (modo offline).
  *
  * Body esperado:
  * {
  *   orderId: string;
  *   restaurantId: string;
- *   tipoDocumento?: "FS" | "FT" | "FR" | "GT";  // default: "FS"
+ *   tipoDocumento?: "FS" | "FT" | "FR" | "GT";  // default: auto-determinado
  * }
  *
- * Resposta:
+ * Resposta (sucesso):
  * {
- *   iud: string;         // 45 chars
- *   numeroDoc: string;   // ex: "FS 2026/00000001"
- *   hash: string;        // 22 chars — para cadeia do próximo doc
+ *   iud: string;           // 45 chars
+ *   numeroDoc: string;     // ex: "FS 2026/00000001"
+ *   hash: string;          // 22 chars
+ *   dnreStatus: string;    // "authorized" | "offline" | "contingencia"
+ *   dnreAutorizacao?: string;
+ *   qrCodeUrl: string;     // URL para QR code no recibo
  * }
  */
 
@@ -24,12 +27,20 @@ import { createClient } from "@supabase/supabase-js";
 import {
   gerarIUD,
   determinarTipoDocumento,
+  validarRegraLimiteNIF,
   type TipoDocumento,
 } from "@/lib/efatura";
+import { buildDocumentoXml, orderItemsParaDocumento } from "@/lib/efatura-xml";
+import { submeterDocumentoDNREComRetry } from "@/lib/efatura-dnre";
+import { gerarUrlVerificacaoIUD } from "@/lib/efatura-qrcode";
+import {
+  efaturaCredenciaisConfiguradas,
+  EFATURA_IS_DEV,
+} from "@/lib/efatura-constants";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Chave de serviço — apenas server-side
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: NextRequest) {
@@ -44,16 +55,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Buscar dados do restaurante (NIF) e do pedido
+    // 1. Buscar dados do restaurante e do pedido em paralelo
     const [restaurantResult, orderResult] = await Promise.all([
       supabase
         .from("restaurants")
-        .select("nif_number, name")
+        .select("nif_number, name, address, city")
         .eq("id", restaurantId)
         .single(),
       supabase
         .from("orders")
-        .select("id, total_amount, customer_nif, order_type, created_at, iud")
+        .select("id, total_amount, customer_nif, customer_name, order_type, created_at, iud, order_items(id, name, price, quantity)")
         .eq("id", orderId)
         .single(),
     ]);
@@ -72,9 +83,10 @@ export async function POST(req: NextRequest) {
     if (order.iud) {
       return NextResponse.json({
         iud: order.iud,
-        numeroDoc: null, // já persistido anteriormente
+        numeroDoc: null,
         hash: null,
         already_exists: true,
+        qrCodeUrl: gerarUrlVerificacaoIUD(order.iud),
       });
     }
 
@@ -93,10 +105,21 @@ export async function POST(req: NextRequest) {
         isDelivery: order.order_type === "delivery",
       });
 
+    // 3. Validar regra 20.000 CVE
+    const totalBruto = Math.round(order.total_amount);
+    try {
+      validarRegraLimiteNIF({
+        totalBruto,
+        customerNif: order.customer_nif,
+        tipoDocumento,
+      });
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
+
     const ano = new Date(order.created_at).getFullYear();
 
-    // 3. Obter o último sequencial + hash da série (atomicamente via RPC)
-    //    A função Supabase incrementa o contador e retorna o próximo valor.
+    // 4. Obter próximo sequencial + hash anterior (atomicamente via RPC)
     const { data: seqData, error: seqError } = await supabase.rpc(
       "efatura_next_sequence",
       {
@@ -119,18 +142,44 @@ export async function POST(req: NextRequest) {
       hash_anterior: string;
     };
 
-    // 4. Gerar o IUD
+    // 5. Gerar IUD
     const resultado = await gerarIUD({
       nifEmitente: restaurante.nif_number,
       tipoDocumento,
       ano,
       numeroSequencial: proximo_sequencial,
       dataHoraEmissao: new Date(order.created_at),
-      totalBruto: Math.round(order.total_amount),
+      totalBruto,
       hashAnterior: hash_anterior || "0",
     });
 
-    // 5. Persistir IUD, hash e número do documento no pedido
+    // 6. Construir XML do documento
+    const orderItems = (order.order_items as any[]) || [];
+    const items = orderItemsParaDocumento(orderItems);
+
+    const xmlDocumento = buildDocumentoXml({
+      iud: resultado.iud,
+      tipoDocumento,
+      numeroDoc: resultado.numeroDoc,
+      numeroSequencial: proximo_sequencial,
+      emitente: {
+        nif: restaurante.nif_number,
+        nome: restaurante.name || "Restaurante",
+        morada: restaurante.address || "",
+        cidade: restaurante.city || "Praia",
+        pais: "CV",
+      },
+      destinatario: order.customer_nif
+        ? { nif: order.customer_nif, nome: order.customer_name || "" }
+        : null,
+      items,
+      totalBruto,
+      dataHoraEmissao: new Date(order.created_at),
+      hashDocumento: resultado.hash,
+      hashAnterior: hash_anterior || "0",
+    });
+
+    // 7. Persistir IUD e hash no pedido
     const { error: updateError } = await supabase
       .from("orders")
       .update({
@@ -138,6 +187,7 @@ export async function POST(req: NextRequest) {
         document_hash: resultado.hash,
         document_number: resultado.numeroDoc,
         document_type: tipoDocumento,
+        dnre_status: "pending",
       })
       .eq("id", orderId);
 
@@ -149,32 +199,73 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Actualizar o hash mais recente da série para o próximo documento
-    const { error: hashError } = await supabase.rpc("efatura_update_last_hash", {
+    // 8. Actualizar hash da série
+    await supabase.rpc("efatura_update_last_hash", {
       p_restaurant_id: restaurantId,
       p_tipo_documento: tipoDocumento,
       p_ano: ano,
       p_hash: resultado.hash,
     });
 
-    if (hashError) {
-      // Log crítico — a sequência está em risco. Não reverter o IUD (já emitido),
-      // mas alertar para intervenção manual.
-      console.error("[E-Fatura] CRÍTICO: IUD emitido mas hash da série não actualizado.", {
+    // 9. Submeter à DNRE (ou guardar offline se credenciais não configuradas / dev)
+    let dnreStatus = "pending";
+    let dnreAutorizacao: string | undefined;
+
+    if (!EFATURA_IS_DEV && efaturaCredenciaisConfiguradas()) {
+      const respostaDNRE = await submeterDocumentoDNREComRetry(xmlDocumento);
+
+      if (respostaDNRE.autorizado) {
+        dnreStatus = "authorized";
+        dnreAutorizacao = respostaDNRE.codigoAutorizacao;
+
+        await supabase
+          .from("orders")
+          .update({
+            dnre_status: "authorized",
+            dnre_autorizacao: dnreAutorizacao,
+            dnre_submitted_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+      } else {
+        // DNRE inacessível → guardar para sync offline
+        dnreStatus = "offline";
+        await _guardarPendente({
+          orderId,
+          restaurantId,
+          iud: resultado.iud,
+          tipoDocumento,
+          numeroDoc: resultado.numeroDoc,
+          xmlDocumento,
+          modo: "offline",
+          erro: respostaDNRE.erro,
+        });
+
+        await supabase
+          .from("orders")
+          .update({ dnre_status: "offline" })
+          .eq("id", orderId);
+      }
+    } else if (EFATURA_IS_DEV) {
+      // Desenvolvimento: não submeter, marcar como pending
+      console.log(`[E-Fatura DEV] IUD gerado: ${resultado.iud} — submissão DNRE desactivada (EFATURA_ENV=dev)`);
+      dnreStatus = "pending";
+    } else {
+      // Credenciais não configuradas → offline
+      dnreStatus = "offline";
+      await _guardarPendente({
         orderId,
+        restaurantId,
         iud: resultado.iud,
-        hash: resultado.hash,
-        error: hashError,
-      });
-      // Retornar sucesso com aviso — o IUD é válido, mas a série precisa de verificação
-      return NextResponse.json({
-        iud: resultado.iud,
-        numeroDoc: resultado.numeroDoc,
-        hash: resultado.hash,
         tipoDocumento,
-        sequencial: proximo_sequencial,
-        warning: "IUD emitido. Verifique a integridade da série manualmente.",
+        numeroDoc: resultado.numeroDoc,
+        xmlDocumento,
+        modo: "offline",
+        erro: "Credenciais DNRE não configuradas",
       });
+      await supabase
+        .from("orders")
+        .update({ dnre_status: "offline" })
+        .eq("id", orderId);
     }
 
     return NextResponse.json({
@@ -183,6 +274,9 @@ export async function POST(req: NextRequest) {
       hash: resultado.hash,
       tipoDocumento,
       sequencial: proximo_sequencial,
+      dnreStatus,
+      dnreAutorizacao,
+      qrCodeUrl: gerarUrlVerificacaoIUD(resultado.iud),
     });
   } catch (err) {
     console.error("[E-Fatura] Erro inesperado:", err);
@@ -190,5 +284,38 @@ export async function POST(req: NextRequest) {
       { error: "Erro interno do servidor" },
       { status: 500 }
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: guardar documento na fila offline
+// ---------------------------------------------------------------------------
+
+async function _guardarPendente(params: {
+  orderId: string;
+  restaurantId: string;
+  iud: string;
+  tipoDocumento: string;
+  numeroDoc: string;
+  xmlDocumento: string;
+  modo: "offline" | "contingencia";
+  erro?: string;
+}): Promise<void> {
+  const { error } = await supabase.from("efatura_pending_submission").upsert(
+    {
+      order_id: params.orderId,
+      restaurant_id: params.restaurantId,
+      iud: params.iud,
+      tipo_documento: params.tipoDocumento,
+      numero_doc: params.numeroDoc,
+      xml_documento: params.xmlDocumento,
+      modo: params.modo,
+      ultimo_erro: params.erro || null,
+    },
+    { onConflict: "order_id" }
+  );
+
+  if (error) {
+    console.error("[E-Fatura] Erro ao guardar pendente:", error);
   }
 }
