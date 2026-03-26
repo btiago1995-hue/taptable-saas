@@ -52,13 +52,15 @@ export async function GET(req: NextRequest) {
     const periodLabel = `${MONTHS_PT[month - 1]}_${year}`;
 
     if (type === "sales") {
-      const { data: orders } = await supabaseAdmin
+      const { data: orders, error: salesErr } = await supabaseAdmin
         .from("orders")
         .select("order_number, created_at, status, order_type, payment_method, payment_status, subtotal, tip, delivery_fee, total_amount, customer_name, customer_nif, table_number")
         .eq("restaurant_id", restaurantId)
         .gte("created_at", startDate)
         .lte("created_at", endDate)
         .order("created_at", { ascending: true });
+
+      if (salesErr) throw salesErr;
 
       const headers = ["Nº Pedido","Data","Hora","Estado","Tipo","Pagamento","Estado Pagamento","Subtotal","Gorjeta","Taxa Entrega","Total","Cliente","NIF","Mesa"];
       const rows = (orders || []).map(o => {
@@ -81,7 +83,7 @@ export async function GET(req: NextRequest) {
         ];
       });
       const csv = toCSV(headers, rows);
-      return new NextResponse(csv, {
+      return new NextResponse("\ufeff" + csv, {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -91,26 +93,40 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "items") {
-      const { data: items } = await supabaseAdmin
-        .from("order_items")
-        .select("name, price, quantity, orders!inner(restaurant_id, created_at, status)")
-        .eq("orders.restaurant_id", restaurantId)
-        .gte("orders.created_at", startDate)
-        .lte("orders.created_at", endDate);
+      // Two-step: get order IDs first, then fetch items — avoids unreliable PostgREST embedded filters
+      const { data: orderRows, error: ordersErr } = await supabaseAdmin
+        .from("orders")
+        .select("id")
+        .eq("restaurant_id", restaurantId)
+        .gte("created_at", startDate)
+        .lte("created_at", endDate);
 
-      // Aggregate by item name
+      if (ordersErr) throw ordersErr;
+
+      const orderIds = (orderRows || []).map(o => o.id);
       const agg: Record<string, { qty: number; revenue: number }> = {};
-      for (const item of items || []) {
-        const key = item.name || "Desconhecido";
-        if (!agg[key]) agg[key] = { qty: 0, revenue: 0 };
-        agg[key].qty += Number(item.quantity || 1);
-        agg[key].revenue += Number(item.price || 0) * Number(item.quantity || 1);
+
+      if (orderIds.length > 0) {
+        const { data: items, error: itemsErr } = await supabaseAdmin
+          .from("order_items")
+          .select("name, price, quantity")
+          .in("order_id", orderIds);
+
+        if (itemsErr) throw itemsErr;
+
+        for (const item of items || []) {
+          const key = item.name || "Desconhecido";
+          if (!agg[key]) agg[key] = { qty: 0, revenue: 0 };
+          agg[key].qty += Number(item.quantity || 1);
+          agg[key].revenue += Number(item.price || 0) * Number(item.quantity || 1);
+        }
       }
+
       const sorted = Object.entries(agg).sort((a, b) => b[1].qty - a[1].qty);
       const headers = ["Produto","Qtd Vendida","Receita (CVE)"];
       const rows = sorted.map(([name, v]) => [name, v.qty, v.revenue.toFixed(2)]);
       const csv = toCSV(headers, rows);
-      return new NextResponse(csv, {
+      return new NextResponse("\ufeff" + csv, {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -120,12 +136,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "payments") {
-      const { data: orders } = await supabaseAdmin
+      const { data: orders, error: paymentsErr } = await supabaseAdmin
         .from("orders")
         .select("payment_method, payment_status, total_amount")
         .eq("restaurant_id", restaurantId)
         .gte("created_at", startDate)
         .lte("created_at", endDate);
+
+      if (paymentsErr) throw paymentsErr;
 
       const agg: Record<string, { count: number; total: number; paid: number }> = {};
       for (const o of orders || []) {
@@ -144,7 +162,7 @@ export async function GET(req: NextRequest) {
         (v.total - v.paid).toFixed(2),
       ]);
       const csv = toCSV(headers, rows);
-      return new NextResponse(csv, {
+      return new NextResponse("\ufeff" + csv, {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=utf-8",

@@ -33,7 +33,11 @@ export default function RelatoriosPage() {
       const res = await fetch(`/api/reports/export?year=${year}&month=${month}&type=${type}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) { alert("Erro ao gerar relatório"); return; }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Erro ao gerar relatório: ${err.error || res.statusText}`);
+        return;
+      }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") || "";
       const match = disposition.match(/filename="(.+?)"/);
