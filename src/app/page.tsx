@@ -140,13 +140,6 @@ export default function Home() {
           
           <div className="max-w-5xl mx-auto relative z-10">
 
-            {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 mb-8">
-              <p className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#9333ea] to-[#facc15]">
-                Dineo SaaS — Servyx, Cabo Verde
-              </p>
-            </div>
-
             {/* Headline — Sunday-style: massive, editorial, left-aligned */}
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.0] text-slate-900 mb-8 max-w-4xl">
               Mais pedidos.
