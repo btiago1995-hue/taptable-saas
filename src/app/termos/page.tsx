@@ -66,7 +66,7 @@ export default function TermsPage() {
                 </div>
                 
                 <div className="mt-24 pt-10 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-sm text-slate-500 font-bold">
-                    <p>© 2026 Servyx. Todos os direitos reservados.</p>
+                    <p>© 2026 Servyx Labs. Todos os direitos reservados.</p>
                     <div className="flex gap-8 mt-6 sm:mt-0">
                         <Link href="/privacidade" className="hover:text-slate-900 transition-colors">Política de Privacidade</Link>
                         <Link href="/admin/login" className="hover:text-slate-900 transition-colors">Acesso de Lojista</Link>

@@ -208,7 +208,7 @@ function generateSaftXml({
     <CurrencyCode>CVE</CurrencyCode>
     <DateCreated>${dateCreated}</DateCreated>
     <TaxEntity>Global</TaxEntity>
-    <ProductCompanyTaxID>Dineo by Servyx</ProductCompanyTaxID>
+    <ProductCompanyTaxID>Dineo by Servyx Labs</ProductCompanyTaxID>
     <SoftwareCertificateNumber>${esc(swCode)}</SoftwareCertificateNumber>
     <ProductID>Dineo SaaS</ProductID>
     <ProductVersion>1.0</ProductVersion>

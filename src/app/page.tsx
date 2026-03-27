@@ -115,7 +115,7 @@ export default function Home() {
             <span className="font-black text-2xl tracking-tight text-slate-900">
               Dineo<span className="text-[#9333ea]">.</span>
             </span>
-            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
+            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx Labs</span>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500">
@@ -346,7 +346,7 @@ export default function Home() {
             <span className="text-slate-600 text-xs">by Servyx Labs</span>
           </div>
           <div className="flex items-center gap-5 flex-wrap justify-center">
-            <p className="text-slate-600 text-xs">© 2026 Servyx. Todos os direitos reservados.</p>
+            <p className="text-slate-600 text-xs">© 2026 Servyx Labs. Todos os direitos reservados.</p>
             <a href="/termos" className="text-slate-600 hover:text-white text-xs transition-colors">Termos</a>
             <a href="/privacidade" className="text-slate-600 hover:text-white text-xs transition-colors">Privacidade</a>
             <Link href="/admin/login" className="text-slate-600 hover:text-white text-xs transition-colors">Login Gerente</Link>

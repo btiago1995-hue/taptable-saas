@@ -49,7 +49,7 @@ export default function AdminLogin() {
                 <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2.5">
                         <span className="font-black text-2xl tracking-tight text-slate-900">Dineo</span>
-                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
+                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx Labs</span>
                     </Link>
                 </div>
             </nav>

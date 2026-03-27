@@ -45,7 +45,7 @@ export default function ContactoPage() {
             <span className="font-black text-2xl tracking-tight text-slate-900">
               Dineo<span className="text-[#9333ea]">.</span>
             </span>
-            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx</span>
+            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase ml-1 hidden sm:inline">by Servyx Labs</span>
           </Link>
           <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-slate-900 text-sm font-semibold transition-colors">
             <ArrowLeft className="w-4 h-4" /> Voltar
