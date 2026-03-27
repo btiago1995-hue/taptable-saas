@@ -17,6 +17,7 @@ const STARTER_FEATURES = [
   "cashier",
   "dashboard",
   "waiter",
+  "reports_basic",
 ] as const;
 
 const GROWTH_FEATURES = [
@@ -29,6 +30,8 @@ const GROWTH_FEATURES = [
   "conta_corrente",
   "sisp",
   "loyalty",
+  "stock",
+  "reports",
 ] as const;
 
 const PRO_FEATURES = [

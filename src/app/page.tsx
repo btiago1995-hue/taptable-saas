@@ -23,6 +23,20 @@ const features = [
     dark: true,
   },
   {
+    label: "Gestão de Stock",
+    headline: "Saiba o que tem em armazém antes de ficar sem nada.",
+    body: "Controle entradas e saídas de ingredientes em tempo real. Receba alertas quando o stock estiver a baixar e evite surpresas no meio do serviço. Integrado diretamente com o POS e os pedidos.",
+    aside: "Stock em Tempo Real · Alertas de Ruptura · Integrado ao POS",
+    dark: false,
+  },
+  {
+    label: "Relatórios & Analytics",
+    headline: "Decida com dados, não com intuição.",
+    body: "Veja as vendas do dia, os pratos mais pedidos, o desempenho por mesa e muito mais. Exporte relatórios em CSV para a contabilidade ou partilhe com o seu gestor — tudo a partir do painel.",
+    aside: "Vendas Diárias · Exportação CSV · Análise por Período",
+    dark: true,
+  },
+  {
     label: "Delivery & Takeaway",
     headline: "Uma loja online para o seu restaurante, pronta em minutos.",
     body: "Coloque o link do delivery no Instagram ou WhatsApp e comece a receber pedidos agora. O app do entregador acompanha cada encomenda do forno até à porta do cliente.",
@@ -46,7 +60,7 @@ const PLANS = [
     name: "Starter",
     price: { monthly: 1490, quarterly: 3990, annual: 14900 },
     desc: "Comece a digitalizar o seu salão hoje.",
-    items: ["Menu QR Code Dinâmico", "Gestão de Mesas", "Ponto de Venda (POS)", "Dashboard Admin", "Equipe até 2 pessoas"],
+    items: ["Menu QR Code Dinâmico", "Gestão de Mesas", "Ponto de Venda (POS)", "Dashboard Admin", "Relatórios Básicos", "Equipe até 2 pessoas"],
     cta: "Começar Trial",
     href: "/onboarding?plan=starter",
     highlighted: false,
@@ -56,7 +70,7 @@ const PLANS = [
     name: "Growth",
     price: { monthly: 2990, quarterly: 7990, annual: 29900 },
     desc: "O ecossistema completo de restauração.",
-    items: ["Tudo do Starter", "KDS de Cozinha em Tempo Real", "App do Garçom", "Delivery \u0026 Guias de Transporte", "Analytics \u0026 CRM Real", "Conta Corrente Clientes", "SISP Vinti4"],
+    items: ["Tudo do Starter", "KDS de Cozinha em Tempo Real", "App do Garçom", "Delivery \u0026 Guias de Transporte", "Gestão de Stock", "Relatórios Avançados \u0026 CSV", "Analytics \u0026 CRM Real", "Conta Corrente Clientes", "SISP Vinti4"],
     cta: "Testar 30 Dias Grátis",
     href: "/onboarding?plan=growth",
     highlighted: true,
@@ -328,11 +342,8 @@ export default function Home() {
       <footer className="bg-slate-950 border-t border-white/5 py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            </div>
-            <span className="font-black text-white text-sm">Dineo</span>
-            <span className="text-slate-600 text-xs">by Servyx</span>
+            <span className="font-black text-white text-sm">Dineo<span className="text-[#9333ea]">.</span></span>
+            <span className="text-slate-600 text-xs">by Servyx Labs</span>
           </div>
           <div className="flex items-center gap-5 flex-wrap justify-center">
             <p className="text-slate-600 text-xs">© 2026 Servyx. Todos os direitos reservados.</p>
