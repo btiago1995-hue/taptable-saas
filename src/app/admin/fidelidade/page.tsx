@@ -11,8 +11,7 @@ interface LoyaltyCustomer {
   phone_number: string;
   name: string;
   stars: number;
-  total_redeemed: number;
-  updated_at: string;
+  created_at: string;
 }
 
 interface LoyaltySettings {
@@ -41,7 +40,7 @@ export default function FidelidadePage() {
     setLoading(true);
     const [{ data: lc }, { data: rest }] = await Promise.all([
       supabase.from("loyalty_customers")
-        .select("id, phone_number, name, stars, total_redeemed, updated_at")
+        .select("id, phone_number, name, stars, created_at")
         .eq("restaurant_id", user.restaurantId)
         .order("stars", { ascending: false }),
       supabase.from("restaurants")
@@ -96,7 +95,7 @@ export default function FidelidadePage() {
   const stats = {
     total: customers.length,
     eligible: customers.filter(c => c.stars >= settings.loyalty_stars_threshold).length,
-    redeemed: customers.reduce((s, c) => s + c.total_redeemed, 0),
+    redeemed: 0,
   };
 
   return (
@@ -264,9 +263,9 @@ export default function FidelidadePage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-center text-slate-600 font-bold">{c.total_redeemed}</td>
+                      <td className="px-4 py-3.5 text-center text-slate-600 font-bold">—</td>
                       <td className="px-4 py-3.5 text-xs text-slate-400">
-                        {new Date(c.updated_at).toLocaleDateString("pt-CV")}
+                        {new Date(c.created_at).toLocaleDateString("pt-CV")}
                       </td>
                     </tr>
                   ))}
