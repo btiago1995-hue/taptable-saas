@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Design System
+
+Ler obrigatoriamente [DESIGN.md](DESIGN.md) antes de qualquer decisão visual ou de UI.
+Todas as cores, tipografia, espaçamento e direcção estética estão definidos aí.
+Não desviar sem aprovação explícita do utilizador.
+Em modo QA, assinalar qualquer código que não corresponda ao DESIGN.md.
+
 ## Memória Persistente
 
 **No início de cada sessão**, ler obrigatoriamente:
