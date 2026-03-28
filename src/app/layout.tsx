@@ -5,6 +5,7 @@ import { CartProvider } from "@/lib/CartContext";
 import { OrderProvider } from "@/lib/OrderContext";
 import { MenuProvider } from "@/lib/MenuContext";
 import { AuthProvider } from "@/lib/AuthContext";
+import { Toaster } from "@/lib/toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -51,6 +52,7 @@ export default function RootLayout({
             <OrderProvider>
               <CartProvider>
                 {children}
+                <Toaster />
               </CartProvider>
             </OrderProvider>
           </MenuProvider>

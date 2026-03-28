@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -74,7 +75,7 @@ export function OrderReceiptPDF({
 
         } catch (error) {
             console.error("Error generating PDF", error);
-            alert("Ocorreu um erro ao gerar o recibo. Tente novamente.");
+            toast.error("Ocorreu um erro ao gerar o recibo. Tente novamente.");
         } finally {
             setIsGenerating(false);
         }

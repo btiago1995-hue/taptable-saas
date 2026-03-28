@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/lib/AuthContext";
 import { usePlanGate } from "@/lib/planGate";
 import { FileDown, Calendar, FileText, CheckCircle2 } from "lucide-react";
@@ -30,7 +31,7 @@ export default function SaftPage() {
 
       if (!response.ok) {
         const err = await response.json();
-        alert(`Erro: ${err.error}`);
+        toast.error(`Erro: ${err.error}`);
         return;
       }
 

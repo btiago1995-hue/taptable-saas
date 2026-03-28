@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Star, ExternalLink, Clock, Gift, Loader2 } from "lucide-react";
@@ -38,7 +39,7 @@ export default function SuccessPage() {
     const handleRegisterLoyalty = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!whatsapp || whatsapp.length < 9) {
-            alert("Por favor, insira um número de WhatsApp válido.");
+            toast.error("Por favor, insira um número de WhatsApp válido.");
             return;
         }
 
@@ -53,7 +54,7 @@ export default function SuccessPage() {
             setClaimed(true);
         } catch (error) {
             console.error("Erro ao registrar fidelidade:", error);
-            alert("Houve um problema. Tente verificar suas estrelas na página inicial.");
+            toast.error("Houve um problema. Tente verificar suas estrelas na página inicial.");
         } finally {
             setIsRegistering(false);
         }

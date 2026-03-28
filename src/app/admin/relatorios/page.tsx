@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { BarChart3, Download, Loader2, FileSpreadsheet, ShoppingBag, CreditCard } from "lucide-react";
@@ -35,7 +36,7 @@ export default function RelatoriosPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(`Erro ao gerar relatório: ${err.error || res.statusText}`);
+        toast.error(`Erro ao gerar relatório: ${err.error || res.statusText}`);
         return;
       }
       const blob = await res.blob();

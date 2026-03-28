@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "@/lib/toast";
 // Force Vercel Redeploy - Ver 1.0.1
 
 import { useState, useEffect, Suspense } from "react";
@@ -157,7 +158,7 @@ function SettingsContent() {
             }
         } catch (err: any) {
             console.error("Error saving restaurant settings", err);
-            alert("Erro ao gravar definições: " + (err.message || 'Falha na BD.'));
+            toast.error("Erro ao gravar definições: " + (err.message || 'Falha na BD.'));
         } finally {
             setIsSaving(false);
         }
@@ -200,7 +201,7 @@ function SettingsContent() {
             document.body.appendChild(form);
             form.submit();
         } catch (err: any) {
-            alert(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade Dineo, configure as chaves mestras SISP no servidor.)");
+            toast.error(err.message + "\n\n(Lembrete: Para usar pagamentos B2B da mensalidade Dineo, configure as chaves mestras SISP no servidor.)");
         } finally {
             setIsSaving(false);
         }
@@ -232,7 +233,7 @@ function SettingsContent() {
             // Reload page so AuthContext picks up the new restaurant
             window.location.reload();
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setAddingLocation(false);
         }
@@ -458,7 +459,7 @@ function SettingsContent() {
                                                         onClick={() => {
                                                             if (user?.restaurantId) {
                                                                 navigator.clipboard.writeText(deliveryQr?.link || '');
-                                                                alert("Link copiado para a área de transferência!");
+                                                                toast.success("Link copiado para a área de transferência!");
                                                             }
                                                         }}
                                                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap"

@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
@@ -216,7 +217,7 @@ export default function SuperAdminDashboard() {
       await patchRestaurant(id, { is_active: !current });
       setRestaurants(prev => prev.map(r => r.id === id ? { ...r, is_active: !current } : r));
     } catch (err: any) {
-      alert("Erro: " + err.message);
+      toast.error("Erro: " + err.message);
     } finally { setIsToggling(null); }
   };
 
@@ -226,7 +227,7 @@ export default function SuperAdminDashboard() {
       await patchRestaurant(id, { subscription_plan: plan });
       setRestaurants(prev => prev.map(r => r.id === id ? { ...r, subscription_plan: plan } : r));
     } catch (err: any) {
-      alert("Erro: " + err.message);
+      toast.error("Erro: " + err.message);
     } finally { setIsToggling(null); }
   };
 
@@ -246,7 +247,7 @@ export default function SuperAdminDashboard() {
           : r
       ));
     } catch (err: any) {
-      alert("Erro: " + err.message);
+      toast.error("Erro: " + err.message);
     } finally { setIsToggling(null); }
   };
 

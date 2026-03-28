@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useState, useMemo, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
@@ -154,7 +155,7 @@ export default function AdminCashierPage() {
             setShowCashConfirmation(false);
         } catch (error) {
             console.error("Error closing table:", error);
-            alert("Erro ao fechar mesa. Por favor, tente novamente.");
+            toast.error("Erro ao fechar mesa. Por favor, tente novamente.");
         } finally {
             setIsClosing(false);
         }
@@ -179,10 +180,10 @@ export default function AdminCashierPage() {
             // Close modal
             setEstornoOrder(null);
             setEstornoReason("");
-            alert("Nota de Crédito (Estorno) emitida com sucesso.");
+            toast.success("Nota de Crédito (Estorno) emitida com sucesso.");
         } catch (error: any) {
             console.error("Estorno failed", error);
-            alert("Erro ao emitir estorno: " + error.message);
+            toast.error("Erro ao emitir estorno: " + error.message);
         } finally {
             setIsEstornando(false);
         }
@@ -205,10 +206,10 @@ export default function AdminCashierPage() {
                     url: `https://pe.efatura.cv/dfe/view/${data.iud}`,
                 });
             } else {
-                alert("E-Fatura ainda não gerada para este pedido.");
+                toast.info("E-Fatura ainda não gerada para este pedido.");
             }
         } catch {
-            alert("Erro ao buscar dados E-Fatura.");
+            toast.error("Erro ao buscar dados E-Fatura.");
         } finally {
             setIsFetchingQr(null);
         }

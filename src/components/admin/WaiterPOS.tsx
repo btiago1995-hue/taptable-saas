@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Minus, X, UtensilsCrossed, ReceiptText, Banknote, Store, Loader2, PenSquare } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -83,9 +84,9 @@ export function WaiterPOS({ restaurantId }: WaiterPOSProps) {
     };
 
     const handleSubmitOrder = async (paymentOption: 'pending' | 'cash' | 'vinti4') => {
-        if (cart.length === 0) return alert("O carrinho está vazio.");
+        if (cart.length === 0) return toast.error("O carrinho está vazio.");
         if (!tableNumber || isNaN(Number(tableNumber)) || Number(tableNumber) <= 0) {
-            return alert("Insira um número de mesa válido.");
+            return toast.error("Insira um número de mesa válido.");
         }
 
         setIsSubmitting(true);
@@ -111,7 +112,7 @@ export function WaiterPOS({ restaurantId }: WaiterPOSProps) {
             setIsOpen(false);
         } catch (error) {
             console.error("Failed to place order:", error);
-            alert("Erro ao lançar o pedido.");
+            toast.error("Erro ao lançar o pedido.");
         } finally {
             setIsSubmitting(false);
         }

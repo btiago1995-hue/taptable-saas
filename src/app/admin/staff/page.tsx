@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -143,7 +144,7 @@ export default function StaffManagementPage() {
     // For MVP, we will just delete the public profile and ignore the auth ghost record to simplify.
     const { error } = await supabase.from('users').delete().eq('id', staffId);
     if(error){
-        alert("Erro ao remover: " + error.message);
+        toast.error("Erro ao remover: " + error.message);
     } else {
         fetchStaff();
     }

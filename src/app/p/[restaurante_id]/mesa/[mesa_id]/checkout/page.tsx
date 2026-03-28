@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -87,7 +88,7 @@ export default function CheckoutPage() {
             router.push(`/p/${restaurant.id}/success?tx=${txId}&table=${params.mesa_id || 1}`);
         } catch (err) {
             console.error("Failed to place order", err);
-            alert("Ocorreu um erro ao processar seu pedido. Tente novamente.");
+            toast.error("Ocorreu um erro ao processar seu pedido. Tente novamente.");
         } finally {
             setIsSubmitting(false);
         }

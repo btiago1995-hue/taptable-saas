@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -76,7 +77,7 @@ export default function DeliveryCheckoutPage() {
         if (isSubmitting) return; // FIX: Prevent multiple taps generating 3 ghost orders
 
         if (!customerName || !customerPhone || (orderMethod === "delivery" && !deliveryAddress)) {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+            toast.error("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
 
@@ -140,7 +141,7 @@ export default function DeliveryCheckoutPage() {
                  form.submit(); // Takes the user to SISP Gateway!
                  return; // Do not redirect to local success yet
              } catch (err: any) {
-                 alert(err.message);
+                 toast.error(err.message);
                  setIsSubmitting(false);
                  router.push(`/p/${restaurant.id}/delivery?method=${orderMethod}`); // fallback
                  return;
@@ -152,7 +153,7 @@ export default function DeliveryCheckoutPage() {
         // Keeping it true prevents the user from clicking again during the redirect.
     } catch (e: any) {
         console.error("Failed to place order", e);
-        alert("Ocorreu um erro ao processar o seu pedido. Tente novamente.");
+        toast.error("Ocorreu um erro ao processar o seu pedido. Tente novamente.");
         setIsSubmitting(false);
     }
     };

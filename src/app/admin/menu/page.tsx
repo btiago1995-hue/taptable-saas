@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/lib/toast";
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Image as ImageIcon, AlertCircle, Save, X, Loader2, Search, Edit2, Store, Upload } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -148,12 +149,12 @@ export default function AdminMenuPage() {
         e.preventDefault();
         const priceNum = parseFloat(formData.price.replace(",", "."));
         if (!user?.restaurantId) {
-            alert("Sessão expirada. A sua ligação à base de dados caiu por inatividade. Por favor, recarregue a página (F5) para restabelecer a segurança e tente novamente.");
+            toast.error("Sessão expirada. A sua ligação à base de dados caiu por inatividade. Por favor, recarregue a página (F5) para restabelecer a segurança e tente novamente.");
             return;
         }
 
         if (!formData.name || isNaN(priceNum)) {
-            alert("Por favor, preencha o nome do prato e certifique-se que o preço contém apenas números.");
+            toast.error("Por favor, preencha o nome do prato e certifique-se que o preço contém apenas números.");
             return;
         }
         setIsUploading(true);
@@ -197,7 +198,7 @@ export default function AdminMenuPage() {
             setIsItemModalOpen(false);
         } catch (error: any) {
             console.error("Error uploading image:", error);
-            alert(error.message || "Erro ao conectar à cloud. Verifique a sua internet e tente novamente.");
+            toast.error(error.message || "Erro ao conectar à cloud. Verifique a sua internet e tente novamente.");
         } finally {
             setIsUploading(false);
         }
@@ -226,10 +227,10 @@ export default function AdminMenuPage() {
             await setDbItems(localItems);
             setHasUnsavedChanges(false);
             // Optional: show a toast success message here
-            alert("Cardápio salvo com sucesso na nuvem!");
+            toast.success("Cardápio salvo com sucesso na nuvem!");
         } catch (error) {
             console.error("Erro ao salvar cardápio na nuvem:", error);
-            alert("Erro ao salvar as mudanças. Tente novamente.");
+            toast.error("Erro ao salvar as mudanças. Tente novamente.");
         } finally {
             setIsSavingAll(false);
         }
