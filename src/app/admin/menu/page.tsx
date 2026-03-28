@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "@/lib/toast";
+import { toast, showConfirm } from "@/lib/toast";
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Image as ImageIcon, AlertCircle, Save, X, Loader2, Search, Edit2, Store, Upload } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -206,10 +206,10 @@ export default function AdminMenuPage() {
 
 
     const handleDeleteItem = (id: string) => {
-        if (confirm("Tem certeza que deseja excluir este prato?")) {
+        showConfirm("Tem certeza que deseja excluir este prato?", () => {
             setLocalItems(localItems.filter(i => i.id !== id));
             setHasUnsavedChanges(true);
-        }
+        });
     };
 
     const toggleStatus = (id: string, currentStatus: string) => {

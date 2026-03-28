@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "@/lib/toast";
+import { toast, showConfirm } from "@/lib/toast";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
@@ -138,7 +138,7 @@ export default function StaffManagementPage() {
   };
 
   const deleteStaff = async (staffId: string) => {
-    if(!confirm("Tem certeza que deseja remover este membro da equipe? O acesso será revogado.")) return;
+    showConfirm("Tem certeza que deseja remover este membro da equipe? O acesso será revogado.", async () => {
     
     // In a real app we would call a server action to use the admin client to delete the auth.users record.
     // For MVP, we will just delete the public profile and ignore the auth ghost record to simplify.
@@ -148,6 +148,7 @@ export default function StaffManagementPage() {
     } else {
         fetchStaff();
     }
+    });
   }
 
   const roleIconInfo = {

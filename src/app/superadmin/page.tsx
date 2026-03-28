@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from "@/lib/toast";
+import { toast, showConfirm } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
@@ -211,7 +211,7 @@ export default function SuperAdminDashboard() {
   };
 
   const toggleAccess = async (id: string, current: boolean) => {
-    if (!confirm(`${current ? "Suspender" : "Restaurar"} acesso deste restaurante?`)) return;
+    showConfirm(`${current ? "Suspender" : "Restaurar"} acesso deste restaurante?`, async () => {
     try {
       setIsToggling(id);
       await patchRestaurant(id, { is_active: !current });
@@ -219,6 +219,7 @@ export default function SuperAdminDashboard() {
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     } finally { setIsToggling(null); }
+    });
   };
 
   const changePlan = async (id: string, plan: string) => {

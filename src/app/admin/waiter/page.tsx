@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, Check, Coffee, Clock, Users, Play, Banknote, Truck, Store, PhoneCall, MapPin, Navigation, ChevronDown, UserCheck, Loader2, Package } from "lucide-react";
+import { showConfirm } from "@/lib/toast";
 import { useOrders, LiveOrder, OrderStatus } from "@/lib/OrderContext";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -57,8 +58,9 @@ export default function WaiterDashboard() {
     const handleDeliver = (orderId: string) => updateOrderStatus(orderId, "delivered");
 
     const handleConfirmPayment = (orderId: string) => {
-        if (confirm("Confirmar recebimento em dinheiro para esta mesa?"))
-            updatePaymentStatus(orderId, "paid");
+        showConfirm("Confirmar recebimento em dinheiro para esta mesa?", () =>
+            updatePaymentStatus(orderId, "paid")
+        );
     };
 
     const handleDispatch = async (order: LiveOrder) => {

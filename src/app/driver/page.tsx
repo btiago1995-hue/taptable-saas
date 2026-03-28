@@ -1,6 +1,7 @@
 "use client";
 
 import { useOrders, LiveOrder } from "@/lib/OrderContext";
+import { showConfirm } from "@/lib/toast";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -526,7 +527,7 @@ export default function DriverDashboard() {
 
                     <div className="px-6 pb-10 pt-4 border-t border-slate-800 bg-slate-950">
                         <button
-                            onClick={() => { if (confirm("Fechar turno e sair?")) logout(); }}
+                            onClick={() => showConfirm("Fechar turno e sair?", logout)}
                             className="w-full h-13 py-3.5 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-500/20 transition-colors"
                         >
                             <LogOut className="w-4 h-4" /> Fechar Turno
