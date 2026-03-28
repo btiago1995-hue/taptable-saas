@@ -7,24 +7,17 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { openWaybillWindow } from "@/lib/ReceiptWaybill";
 import { triggerOrderNotification } from "@/lib/notifications";
+import { useKDSSound } from "@/lib/useKDSSound";
 
 export default function KitchenDashboard() {
     const { orders: activeOrders, updateOrderStatus, placeOrder } = useOrders();
     const { user } = useAuth();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isMuted, setIsMuted] = useState(false);
-    
+    const { playNewOrder, playOrderReady, playCancel } = useKDSSound();
+
     // Track previous order count to detect new arrivals
     const prevNewCount = useRef(0);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    // Initialize audio object once
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            audioRef.current = new Audio('/bell.ogg');
-            audioRef.current.volume = 0.8;
-        }
-    }, []);
 
     // Group orders into columns
     const columns = useMemo(() => {
@@ -39,15 +32,14 @@ export default function KitchenDashboard() {
         };
     }, [activeOrders]);
 
-    // Ring bell if new orders arrive
+    // Toca som quando chega novo pedido
     useEffect(() => {
         const currentNewCount = columns.new.length;
-        if (currentNewCount > prevNewCount.current && !isMuted && audioRef.current) {
-            // Play sound only if the number of new orders increased
-            audioRef.current.play().catch(e => console.log("Audio autoplay prevented by browser", e));
+        if (currentNewCount > prevNewCount.current && !isMuted) {
+            playNewOrder();
         }
         prevNewCount.current = currentNewCount;
-    }, [columns.new.length, isMuted]);
+    }, [columns.new.length, isMuted, playNewOrder]);
 
     const handleAction = (orderId: string, currentStatus: string) => {
         if (currentStatus === "new") {
@@ -55,6 +47,7 @@ export default function KitchenDashboard() {
             triggerOrderNotification(orderId, "preparing");
         }
         if (currentStatus === "preparing") {
+            if (!isMuted) playOrderReady();
             updateOrderStatus(orderId, "ready");
             triggerOrderNotification(orderId, "ready");
         }
