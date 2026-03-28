@@ -271,7 +271,7 @@ export default function AdminMenuPage() {
                         )}
                     >
                         {isSavingAll ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                        {isSavingAll ? "Salvando na Nuvem..." : "Salvar na Base de Dados"}
+                        {isSavingAll ? "Salvando..." : "Salvar"}
                     </button>
                 </div>
             </div>
